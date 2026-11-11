@@ -1,0 +1,137 @@
+* {
+  margin: 0px;
+  padding: 0px;
+  box-sizing: border-box;
+}
+
+:root {
+  --color-1: rgb(0, 0, 0);
+  --background-color-1: #ffffff;
+  --primary-color: #538bfb;
+  --background-boxcolor: #23262f;
+  --color-2: #17be9e;
+  --color-3: #be1717;
+  --color-4: #0075ff;
+  --background-last-color: #e0f7fa;
+  --background-footer-color: #1c1e27;
+  /* --background-color-2: #daa520e9; */
+  --background-color-3: rgb(245, 245, 245);
+  --background-sign: #f5eded;
+  --backdround-sign-btn: #162d3a;
+  /* --background-color-4: rgb(231, 231, 231); */
+  /* --background-color-5: rgb(226, 227, 230); */
+}
+
+/* :root .dark-theme {
+    --color-1: #ffffff;
+    --background-color-1: #000210;
+    --primary-color: #538BFB;
+    --background-boxcolor: #23262F;
+    --color-2: #17BE9E;
+    --color-3: #BE1717;
+    --background-last-color: #0d626d;
+    --background-footer-color: #1C1E27;
+    --background-color-2: #daa520e9;
+    --background-color-3: rgba(27, 159, 254, .021);
+    --background-sign:#000210;
+    --backdround-sign-btn:#162D3A
+    
+    --background-color-4: rgba(27, 159, 254, 0.048);
+    --background-color-5: rgba(27, 159, 254, 0.1);
+} */
+
+.custom-sign {
+  border: 0px solid red;
+  padding: 50px 100px;
+  margin: 0px -12px;
+  background-color: var(--background-sign);
+}
+
+.custom-inside-sign {
+  border: 1px solid rgb(219 218 218);
+  padding: 20px 40px;
+  border-radius: 15px;
+}
+
+.custom-sign-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 15px;
+  background-color: var(--backdround-sign-btn);
+  color: white;
+}
+
+.costom-forgot-color {
+  color: var(--primary-color);
+}
+
+.custom-sign-right {
+  border: 0px solid red;
+}
+
+.custom-sign-right img {
+  border: 0px solid red;
+  width: 100%;
+  height: 450px;
+  object-fit: contain;
+}
+
+.custom-input {
+  box-shadow: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+}
+
+@media (min-width: 280px) and (max-width: 991px) {
+  .custom-sign {
+    padding: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .custom-sign-right {
+    display: none;
+  }
+
+  .row {
+    margin: 0px;
+  }
+
+  .custom-inside-sign {
+    padding: 15px;
+    margin: 20px 0px;
+  }
+}
+
+.animated-image {
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideLeft 1s forwards;
+}
+
+@keyframes slideLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animated-image-right {
+  opacity: 0;
+  transform: translateX(-100%); /* Start from the left */
+  animation: slideRight 1s forwards; /* 1s duration, forwards to keep the final state */
+}
+
+@keyframes slideRight {
+  to {
+    opacity: 1;
+    transform: translateX(0); /* End at the original position */
+  }
+}
+
+.animi {
+  position: relative;
+  overflow: hidden;
+  /* Optional, to hide any overflow during the animation */
+}
