@@ -108,7 +108,7 @@ function CreateProductVariant() {
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => navigate("/product-variants")}
+          onClick={() => navigate("/add-product/variants")}
         >
           <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
           Back

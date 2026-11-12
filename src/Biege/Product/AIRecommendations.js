@@ -31,7 +31,6 @@ const AIRecommendations = ({ analysisId, productId }) => {
         )}?productId=${encodeURIComponent(productId)}`,
         method: "GET",
       });
-      console.log('response- skin ai recomendations------------', response)
       if (!response?.status) {
         setRecommendations([]);
         setAnalysisResult(null);

@@ -217,7 +217,7 @@ function CreateProductIngredients() {
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => navigate("/product-ingredients")}
+          onClick={() => navigate("/add-product/ingredients0")}
         >
           <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
           Back
