@@ -15,18 +15,18 @@ function ProductPageLayout({ children, activeStep }) {
         }}
       >
 
-        {/* TOP: Basics, Pricing, Media, Variants, Ingredients, AI Tags */}
+        {/* TOP: Step Navigation */}
         <ProductStepNavigation
           position="top"
           activeStep={activeStep}
         />
 
-        {/* MIDDLE: Actual component */}
+        {/* MIDDLE: Page Content */}
         <div className="p-3 p-md-4">
           {children}
         </div>
 
-        {/* BOTTOM: Previous / Next */}
+        {/* BOTTOM: Step Count + Previous / Next */}
         <ProductStepNavigation
           position="bottom"
           activeStep={activeStep}
