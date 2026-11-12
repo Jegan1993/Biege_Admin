@@ -113,13 +113,114 @@ function ProductStepNavigation({ position = "top", activeStep }) {
 
   // BOTTOM NAVIGATION
 
+  // if (position === "bottom") {
+  //   if (activeIndex < 0 || activeIndex >= productTabs.length) {
+  //     return null;
+  //   }
+
+  //   const previousTab = productTabs[activeIndex - 1];
+  //   const nextTab = productTabs[activeIndex + 1];
+
+  //   return (
+  //     <div
+  //       style={{
+  //         display: "flex",
+  //         justifyContent: "space-between",
+  //         alignItems: "center",
+  //         width: "100%",
+  //         minHeight: "60px",
+  //         padding: "12px 16px",
+  //         borderTop: "1px solid #dee2e6",
+  //         boxSizing: "border-box",
+  //       }}
+  //     >
+  //       {/* LEFT SIDE */}
+  //       <span
+  //         style={{
+  //           fontSize: "13px",
+  //           color: "#64748b",
+  //           whiteSpace: "nowrap",
+  //         }}
+  //       >
+  //         Step {activeIndex + 1} of {productTabs.length}
+  //       </span>
+
+  //       {/* RIGHT SIDE */}
+  //       <div
+  //         style={{
+  //           display: "flex",
+  //           alignItems: "center",
+  //           gap: "10px",
+  //           marginLeft: "auto",
+  //         }}
+  //       >
+  //         <button
+  //           type="button"
+  //           disabled={
+  //             !previousTab && pathname !== "/product-basics"
+  //           }
+
+  //           onClick={() => navigateToStep(activeIndex - 1)}
+  //           style={{
+  //             padding: "8px 20px",
+  //             border: "1px solid #ced4da",
+  //             borderRadius: "5px",
+  //             backgroundColor: "#ffffff",
+  //             color: "#495057",
+  //             cursor: previousTab ? "pointer" : "not-allowed",
+  //             opacity: previousTab ? 1 : 0.5,
+  //           }}
+  //         >
+  //           <i className="fa-solid fa-arrow-left me-2"></i>
+  //           Previous
+  //         </button>
+
+
+
+  //         <button
+  //           type="button"
+  //           disabled={!nextTab}
+  //           onClick={() => navigateToStep(activeIndex + 1)}
+  //           style={{
+  //             padding: "8px 20px",
+  //             border: "1px solid #7650b5",
+  //             borderRadius: "5px",
+  //             backgroundColor: "#7650b5",
+  //             color: "#ffffff",
+  //             cursor: nextTab ? "pointer" : "not-allowed",
+  //             opacity: nextTab ? 1 : 0.5,
+  //           }}
+  //         >
+  //           Next
+  //           <i className="fa-solid fa-arrow-right ms-2"></i>
+  //         </button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+
+  // BOTTOM NAVIGATION
+
   if (position === "bottom") {
-    if (activeIndex < 0 || activeIndex >= productTabs.length) {
+    const isViewProduct = pathname === "/view-product";
+
+    if (
+      (activeIndex < 0 && !isViewProduct) ||
+      activeIndex >= productTabs.length
+    ) {
       return null;
     }
 
-    const previousTab = productTabs[activeIndex - 1];
-    const nextTab = productTabs[activeIndex + 1];
+    const previousTab =
+      activeIndex >= 0
+        ? productTabs[activeIndex - 1]
+        : null;
+
+    const nextTab =
+      activeIndex < 0
+        ? productTabs[0]
+        : productTabs[activeIndex + 1];
 
     return (
       <div
@@ -142,7 +243,9 @@ function ProductStepNavigation({ position = "top", activeStep }) {
             whiteSpace: "nowrap",
           }}
         >
-          Step {activeIndex + 1} of {productTabs.length}
+          {isViewProduct
+            ? ""
+            : `Step ${activeIndex + 1} of ${productTabs.length}`}
         </span>
 
         {/* RIGHT SIDE */}
@@ -156,10 +259,7 @@ function ProductStepNavigation({ position = "top", activeStep }) {
         >
           <button
             type="button"
-            disabled={
-              !previousTab && pathname !== "/product-basics"
-            }
-
+            disabled={!previousTab && pathname !== "/product-basics"}
             onClick={() => navigateToStep(activeIndex - 1)}
             style={{
               padding: "8px 20px",
@@ -167,15 +267,19 @@ function ProductStepNavigation({ position = "top", activeStep }) {
               borderRadius: "5px",
               backgroundColor: "#ffffff",
               color: "#495057",
-              cursor: previousTab ? "pointer" : "not-allowed",
-              opacity: previousTab ? 1 : 0.5,
+              cursor:
+                !previousTab && pathname !== "/product-basics"
+                  ? "not-allowed"
+                  : "pointer",
+              opacity:
+                !previousTab && pathname !== "/product-basics"
+                  ? 0.5
+                  : 1,
             }}
           >
             <i className="fa-solid fa-arrow-left me-2"></i>
             Previous
           </button>
-
-
 
           <button
             type="button"
@@ -195,12 +299,12 @@ function ProductStepNavigation({ position = "top", activeStep }) {
             <i className="fa-solid fa-arrow-right ms-2"></i>
           </button>
         </div>
-      </div>
+      </div >
     );
   }
 
-
   return null;
+
 }
 
 export default ProductStepNavigation;
