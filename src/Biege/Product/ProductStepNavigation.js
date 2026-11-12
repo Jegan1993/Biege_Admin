@@ -11,7 +11,6 @@ const productTabs = [
   { id: "AI_TAGS", label: "AI Tags", path: "ai-tags" },
 ];
 
-// Routes used when navigating from Product Details modules
 const standaloneRoutes = [
   "/product-basics",
   "/product-pricing",
@@ -36,7 +35,6 @@ function ProductStepNavigation({ position = "top", activeStep }) {
 
   const productId = isEditWizard ? pathParts[1] : null;
 
-  // Detect active step
   let detectedIndex = standaloneRoutes.indexOf(pathname);
 
   if (isEditWizard) {
@@ -49,13 +47,18 @@ function ProductStepNavigation({ position = "top", activeStep }) {
     );
   }
 
-  // -1 means no active step, such as the ViewProduct landing page
   const activeIndex = Number.isInteger(activeStep)
     ? activeStep
     : detectedIndex;
 
-  // Navigate to selected module
+
   const navigateToStep = (index) => {
+
+    if (index < 0 && pathname === "/product-basics") {
+      navigate("/view-product");
+      return;
+    }
+
     if (index < 0 || index >= productTabs.length) return;
 
     const selectedTab = productTabs[index];
@@ -68,10 +71,7 @@ function ProductStepNavigation({ position = "top", activeStep }) {
       navigate(standaloneRoutes[index]);
     }
   };
-
-  // =================================
-  // TOP: SIX TABS ONLY
-  // =================================
+  // TOP NAVIGATION
   if (position === "top") {
     return (
       <div
@@ -111,57 +111,96 @@ function ProductStepNavigation({ position = "top", activeStep }) {
     );
   }
 
-  // ViewProduct is a landing page, not a wizard step.
-  // Therefore do not show Previous/Next there.
-  if (activeIndex < 0) {
-    return null;
+  // BOTTOM NAVIGATION
+
+  if (position === "bottom") {
+    if (activeIndex < 0 || activeIndex >= productTabs.length) {
+      return null;
+    }
+
+    const previousTab = productTabs[activeIndex - 1];
+    const nextTab = productTabs[activeIndex + 1];
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          minHeight: "60px",
+          padding: "12px 16px",
+          borderTop: "1px solid #dee2e6",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* LEFT SIDE */}
+        <span
+          style={{
+            fontSize: "13px",
+            color: "#64748b",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Step {activeIndex + 1} of {productTabs.length}
+        </span>
+
+        {/* RIGHT SIDE */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginLeft: "auto",
+          }}
+        >
+          <button
+            type="button"
+            disabled={
+              !previousTab && pathname !== "/product-basics"
+            }
+
+            onClick={() => navigateToStep(activeIndex - 1)}
+            style={{
+              padding: "8px 20px",
+              border: "1px solid #ced4da",
+              borderRadius: "5px",
+              backgroundColor: "#ffffff",
+              color: "#495057",
+              cursor: previousTab ? "pointer" : "not-allowed",
+              opacity: previousTab ? 1 : 0.5,
+            }}
+          >
+            <i className="fa-solid fa-arrow-left me-2"></i>
+            Previous
+          </button>
+
+
+
+          <button
+            type="button"
+            disabled={!nextTab}
+            onClick={() => navigateToStep(activeIndex + 1)}
+            style={{
+              padding: "8px 20px",
+              border: "1px solid #7650b5",
+              borderRadius: "5px",
+              backgroundColor: "#7650b5",
+              color: "#ffffff",
+              cursor: nextTab ? "pointer" : "not-allowed",
+              opacity: nextTab ? 1 : 0.5,
+            }}
+          >
+            Next
+            <i className="fa-solid fa-arrow-right ms-2"></i>
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  // =================================
-  // BOTTOM: PREVIOUS / NEXT
-  // =================================
-  const previousTab = productTabs[activeIndex - 1];
-  const nextTab = productTabs[activeIndex + 1];
 
-  return (
-    <div
-      className="d-flex justify-content-between align-items-center border-top flex-wrap gap-3"
-      style={{
-        padding: "16px 20px",
-        width: "100%",
-      }}
-    >
-      <span className="text-muted small">
-        Step {activeIndex + 1} of {productTabs.length}
-      </span>
-
-      <div className="d-flex gap-2 ms-auto">
-        <button
-          type="button"
-          className="btn btn-outline-secondary btn-sm px-4"
-          disabled={!previousTab}
-          onClick={() => navigateToStep(activeIndex - 1)}
-        >
-          <i className="fa-solid fa-arrow-left me-2"></i>
-          {previousTab?.label || "Previous"}
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-sm px-4 text-white"
-          style={{
-            backgroundColor: "#7650b5",
-            borderColor: "#7650b5",
-          }}
-          disabled={!nextTab}
-          onClick={() => navigateToStep(activeIndex + 1)}
-        >
-          {nextTab?.label || "Next"}
-          <i className="fa-solid fa-arrow-right ms-2"></i>
-        </button>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 export default ProductStepNavigation;
