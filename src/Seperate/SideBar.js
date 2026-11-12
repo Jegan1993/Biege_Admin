@@ -3,6 +3,7 @@ import React from "react";
 import {
   Link,
   useLocation,
+  useParams,
   Routes,
   Route,
   Navigate,
@@ -31,16 +32,122 @@ import ProductPricing from "../Biege/Product/ProductPricing";
 import ProductMedia from "../Biege/Product/ProductMedia";
 import ProductVariants from "../Biege/Product/ProductVariants";
 import ProductIngredients from "../Biege/Product/ProductIngredients";
+
 import CreateProductmedia from "../Biege/Product/CreateProductmedia";
 import EditProductMedia from "../Biege/Product/EditProductMedia";
 import ViewProductMedia from "../Biege/Product/ViewProductMedia";
+
 import CreateProductVariant from "../Biege/Product/CreateProductVariant";
 import EditProductVariant from "../Biege/Product/EditProductVariant";
 import ViewProductVariant from "../Biege/Product/ViewProductVariant";
+
 import CreateProductIngredients from "../Biege/Product/CreateProductIngredients";
 import EditProductIngredients from "../Biege/Product/EditProductIngredients";
 import ViewProductIngredients from "../Biege/Product/ViewProductIngredients";
+
 import ProductAiTags from "../Biege/Product/ProductAiTags";
+
+// Common Product Layout
+import ProductPageLayout from "../Biege/Product/ProductPageLayout";
+
+// ==================================================
+// ADD PRODUCT STEP COMPONENT
+// ==================================================
+
+function AddProductStep() {
+  const { tab } = useParams();
+
+  let content;
+
+  switch (tab) {
+    case "basic":
+      content = <CreateProduct />;
+      break;
+
+    case "pricing":
+      content = <ProductPricing />;
+      break;
+
+    case "media":
+      content = <ProductMedia />;
+      break;
+
+    case "variants":
+      content = <ProductVariants />;
+      break;
+
+    case "ingredients":
+      content = <ProductIngredients />;
+      break;
+
+    case "ai-tags":
+      content = <ProductAiTags />;
+      break;
+
+    default:
+      return <Navigate to="/add-product/basic" replace />;
+  }
+
+  return (
+    <ProductPageLayout>
+      {content}
+    </ProductPageLayout>
+  );
+}
+
+// ==================================================
+// EDIT PRODUCT STEP COMPONENT
+// ==================================================
+
+function EditProductStep() {
+  const { id, tab } = useParams();
+
+  let content;
+
+  switch (tab) {
+    case "basic":
+      content = <EditProduct />;
+      break;
+
+    case "pricing":
+      content = <ProductPricing />;
+      break;
+
+    case "media":
+      content = <ProductMedia />;
+      break;
+
+    case "variants":
+      content = <ProductVariants />;
+      break;
+
+    case "ingredients":
+      content = <ProductIngredients />;
+      break;
+
+    case "ai-tags":
+      content = <ProductAiTags />;
+      break;
+
+    default:
+      return (
+        <Navigate
+          to={`/edit-product/${id}/basic`}
+          replace
+        />
+      );
+  }
+
+  return (
+    <ProductPageLayout>
+      {content}
+    </ProductPageLayout>
+  );
+}
+
+// ==================================================
+// SIDEBAR COMPONENT
+// ==================================================
 
 function SideBar() {
   const location = useLocation();
@@ -52,7 +159,7 @@ function SideBar() {
     window.location.href = "/";
   };
 
-  // Product listing pages
+  // Product pages
   const isProductPage =
     pathname === "/view-product" ||
     pathname === "/create-product" ||
@@ -60,8 +167,21 @@ function SideBar() {
     pathname === "/add-product-basic" ||
     pathname.startsWith("/edit-product-basic/") ||
     pathname.startsWith("/add-product/") ||
-    pathname.startsWith("/edit-product/");
-
+    pathname.startsWith("/edit-product/") ||
+    pathname === "/product-media" ||
+    pathname.startsWith("/view-product-media/") ||
+    pathname === "/create-product-media" ||
+    pathname.startsWith("/edit-product-media/") ||
+    pathname === "/product-variants" ||
+    pathname.startsWith("/view-product-variant/") ||
+    pathname === "/create-product-variant" ||
+    pathname.startsWith("/edit-product-variant/") ||
+    pathname === "/product-ingredients" ||
+    pathname === "/create-product-ingredients" ||
+    pathname.startsWith("/edit-product-ingredients/") ||
+    pathname.startsWith("/view-product-ingredients/") ||
+    pathname === "/product-pricing" ||
+    pathname === "/product-ai-tags"
   // Subadmin pages
   const isSubAdminPage =
     pathname === "/permissionmodule" ||
@@ -69,44 +189,17 @@ function SideBar() {
     pathname === "/add-subadmin" ||
     pathname.startsWith("/edit-subadmin/");
 
-  // Existing product tab pages
-  const isEditProduct = pathname.startsWith("/edit-product/");
-  const isAddProduct = pathname.startsWith("/add-product/");
-
-  // Get product ID from URL
-  const pathParts = pathname.split("/");
-  const productId = isEditProduct ? pathParts[2] : null;
-
-  // Get current tab
-  const currentTab = isEditProduct
-    ? pathParts[3] || "basic"
-    : pathParts[2] || "basic";
-
-  // Product tabs
-  const tabs = [
-    { id: "basic", label: "Basics" },
-    { id: "pricing", label: "Pricing" },
-    { id: "media", label: "Media" },
-    { id: "variants", label: "Variants" },
-    { id: "ingredients", label: "Ingredients" },
-    { id: "ai-tags", label: "AI Tags" },
-  ];
-
-  // Product tab navigation
-  const getTabUrl = (tab) => {
-    return isEditProduct
-      ? `/edit-product/${productId}/${tab}`
-      : `/add-product/${tab}`;
-  };
-
   return (
     <div className="App dashboard-navhide-section">
       <div className="container-fluid">
         <div className="row">
 
-          {/* Sidebar */}
+          {/* ================= SIDEBAR ================= */}
+
           <div>
-            <span id="mobile-three-line-collapse">&#9776;</span>
+            <span id="mobile-three-line-collapse">
+              &#9776;
+            </span>
 
             <div
               className="dashboard-sidenav-section"
@@ -127,7 +220,7 @@ function SideBar() {
                 <div className="position-sticky">
                   <ul className="nav flex-column nav-pills">
 
-                    {/* SubAdmin */}
+                    {/* SUBADMIN */}
                     <li className="nav-item">
                       <Link
                         className={`nav-link component-tabs ${isSubAdminPage ? "active" : ""
@@ -139,7 +232,7 @@ function SideBar() {
                       </Link>
                     </li>
 
-                    {/* Product */}
+                    {/* PRODUCT */}
                     <li className="nav-item">
                       <Link
                         className={`nav-link component-tabs ${isProductPage ? "active" : ""
@@ -151,7 +244,7 @@ function SideBar() {
                       </Link>
                     </li>
 
-                    {/* Logout */}
+                    {/* LOGOUT */}
                     <li className="nav-item">
                       <button
                         type="button"
@@ -169,12 +262,15 @@ function SideBar() {
             </div>
           </div>
 
-          {/* Main Content */}
+          {/* ================= MAIN CONTENT ================= */}
+
           <main className="col-md-12 ms-sm-auto col-lg-10 px-md-4">
 
             <Routes>
 
-              {/* ================= SUBADMIN ROUTES ================= */}
+              {/* ==========================================
+                  SUBADMIN ROUTES
+              ========================================== */}
 
               <Route
                 path="/add-subadmin"
@@ -192,220 +288,233 @@ function SideBar() {
               />
 
 
-              {/* ================= PRODUCT LIST ROUTES ================= */}
+              {/* ==========================================
+                  PRODUCT LIST ROUTES
+              ========================================== */}
 
               <Route
                 path="/view-product"
-                element={<ViewProduct />}
+                element={
+                  <ProductPageLayout activeStep={-1}>
+                    <ViewProduct />
+                  </ProductPageLayout>
+                }
               />
 
               <Route
                 path="/product-basics"
-                element={<ProductBasics />}
+                element={
+                  <ProductPageLayout activeStep={0}>
+                    <ProductBasics />
+                  </ProductPageLayout>
+                }
+              />
+              {/* PRICING MODULE */}
+              <Route
+                path="/product-pricing"
+                element={
+                  <ProductPageLayout activeStep={1}>
+                    <ProductPricing />
+                  </ProductPageLayout>
+                }
               />
 
+              {/* AI TAGS MODULE */}
+              <Route
+                path="/product-ai-tags"
+                element={
+                  <ProductPageLayout activeStep={5}>
+                    <ProductAiTags />
+                  </ProductPageLayout>
+                }
+              />
 
-              {/* ================= PRODUCT BASIC ADD / EDIT ================= */}
+              {/* ==========================================
+                  BASIC PRODUCT CRUD
+              ========================================== */}
 
               <Route
                 path="/add-product-basic"
-                element={<AddEditBasic />}
+                element={
+                  <ProductPageLayout activeStep={0}>
+                    <AddEditBasic />
+                  </ProductPageLayout>
+                }
               />
 
               <Route
                 path="/edit-product-basic/:id"
-                element={<AddEditBasic />}
+                element={
+                  <ProductPageLayout activeStep={0}>
+                    <AddEditBasic />
+                  </ProductPageLayout>
+                }
               />
+
+
+              {/* ==========================================
+                  ADD PRODUCT REDIRECT
+              ========================================== */}
+
               <Route
                 path="/create-product"
-                element={<CreateProduct />}
+                element={
+                  <Navigate to="/add-product/basic" replace />
+                }
               />
 
-              <Route
-                path="/product-media"
-                element={<ProductMedia />}
-              />
-              <Route
-                path="/view-product-media/:id"
-                element={<ViewProductMedia />}
-              />
-              <Route
-                path="/create-product-media"
-                element={<CreateProductmedia />}
-              />
+
+              {/* ==========================================
+                  ADD PRODUCT WIZARD
+              ========================================== */}
 
               <Route
-                path="/edit-product-media/:id"
-                element={<EditProductMedia />}
+                path="/add-product"
+                element={
+                  <Navigate to="/add-product/basic" replace />
+                }
               />
-              <Route path="/product-variants" element={<ProductVariants />} />
-              <Route
-                path="/view-product-variant/:id"
-                element={<ViewProductVariant />}
-              />
-              <Route path="/create-product-variant" element={<CreateProductVariant />} />
-              <Route path="/edit-product-variant/:id" element={<EditProductVariant />} />
-              <Route
-                path="/product-ingredients"
-                element={<ProductIngredients />}
-              />
-
-              <Route
-                path="/create-product-ingredients"
-                element={<CreateProductIngredients />}
-              />
-
-              <Route
-                path="/edit-product-ingredients/:id"
-                element={<EditProductIngredients />}
-              />
-
-              <Route
-                path="/view-product-ingredients/:id"
-                element={<ViewProductIngredients />}
-              />
-              {/* ================= EXISTING PRODUCT ADD ================= */}
 
               <Route
                 path="/add-product/:tab"
-                element={
-                  <div className="container-fluid py-4">
-
-                    <h4 className="fw-bold mb-3">
-                      Add Product
-                    </h4>
-
-                    <div className="card border-0 shadow-sm mb-4">
-                      <div className="card-body">
-                        <div className="d-flex flex-wrap gap-2">
-
-                          {tabs.map((tab) => (
-                            <Link
-                              key={tab.id}
-                              to={getTabUrl(tab.id)}
-                              className={`btn ${currentTab === tab.id
-                                ? "btn-primary"
-                                : "btn-outline-secondary"
-                                }`}
-                            >
-                              {tab.label}
-                            </Link>
-                          ))}
-
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="card border-0 shadow-sm">
-                      <div className="card-body p-4">
-
-                        {currentTab === "basic" && (
-                          <ProductBasics />
-                        )}
-
-                        {currentTab === "pricing" && (
-                          <ProductPricing />
-                        )}
-
-                        {currentTab === "media" && (
-                          <ProductMedia />
-                        )}
-
-                        {currentTab === "variants" && (
-                          <ProductVariants />
-                        )}
-
-                        {currentTab === "ingredients" && (
-                          <ProductIngredients />
-                        )}
-
-                        {currentTab === "ai-tags" && (
-                          <div>
-                            <ProductAiTags />
-                          </div>
-                        )}
-
-                      </div>
-                    </div>
-
-                  </div>
-                }
+                element={<AddProductStep />}
               />
 
 
-              {/* ================= EXISTING PRODUCT EDIT ================= */}
+              {/* ==========================================
+                  EDIT PRODUCT WIZARD
+              ========================================== */}
 
-              {/* Redirect to Basic tab */}
               <Route
                 path="/edit-product/:id"
-                element={
-                  <Navigate to="basic" replace />
-                }
+                element={<Navigate to="basic" replace />}
               />
 
               <Route
                 path="/edit-product/:id/:tab"
+                element={<EditProductStep />}
+              />
+
+
+              {/* ==========================================
+                  MEDIA MODULE ROUTES
+              ========================================== */}
+
+              <Route
+                path="/product-media"
                 element={
-                  <div className="container-fluid py-4">
+                  <ProductPageLayout activeStep={2}>
+                    <ProductMedia />
+                  </ProductPageLayout>
+                }
+              />
 
-                    <h4 className="fw-bold mb-3">
-                      Edit Product
-                    </h4>
+              <Route
+                path="/view-product-media/:id"
+                element={
+                  <ProductPageLayout activeStep={2}>
+                    <ViewProductMedia />
+                  </ProductPageLayout>
+                }
+              />
 
-                    <div className="card border-0 shadow-sm mb-4">
-                      <div className="card-body">
-                        <div className="d-flex flex-wrap gap-2">
+              <Route
+                path="/create-product-media"
+                element={
+                  <ProductPageLayout activeStep={2}>
+                    <CreateProductmedia />
+                  </ProductPageLayout>
+                }
+              />
 
-                          {tabs.map((tab) => (
-                            <Link
-                              key={tab.id}
-                              to={getTabUrl(tab.id)}
-                              className={`btn ${currentTab === tab.id
-                                ? "btn-primary"
-                                : "btn-outline-secondary"
-                                }`}
-                            >
-                              {tab.label}
-                            </Link>
-                          ))}
+              <Route
+                path="/edit-product-media/:id"
+                element={
+                  <ProductPageLayout activeStep={2}>
+                    <EditProductMedia />
+                  </ProductPageLayout>
+                }
+              />
 
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="card border-0 shadow-sm">
-                      <div className="card-body p-4">
+              {/* ==========================================
+                  VARIANTS MODULE ROUTES
+              ========================================== */}
 
-                        {currentTab === "basic" && (
-                          <EditProduct />
-                        )}
+              <Route
+                path="/product-variants"
+                element={
+                  <ProductPageLayout activeStep={3}>
+                    <ProductVariants />
+                  </ProductPageLayout>
+                }
+              />
 
-                        {currentTab === "pricing" && (
-                          <ProductPricing />
-                        )}
+              <Route
+                path="/view-product-variant/:id"
+                element={
+                  <ProductPageLayout activeStep={3}>
+                    <ViewProductVariant />
+                  </ProductPageLayout>
+                }
+              />
 
-                        {currentTab === "media" && (
-                          <ProductMedia />
-                        )}
+              <Route
+                path="/create-product-variant"
+                element={
+                  <ProductPageLayout activeStep={3}>
+                    <CreateProductVariant />
+                  </ProductPageLayout>
+                }
+              />
 
-                        {currentTab === "variants" && (
-                          <ProductVariants />
-                        )}
+              <Route
+                path="/edit-product-variant/:id"
+                element={
+                  <ProductPageLayout activeStep={3}>
+                    <EditProductVariant />
+                  </ProductPageLayout>
+                }
+              />
 
-                        {currentTab === "ingredients" && (
-                          <ProductIngredients />
-                        )}
 
-                        {currentTab === "ai-tags" && (
-                          <div>
-                            AI Tags component needs to be added.
-                          </div>
-                        )}
+              {/* ==========================================
+                  INGREDIENTS MODULE ROUTES
+              ========================================== */}
 
-                      </div>
-                    </div>
+              <Route
+                path="/product-ingredients"
+                element={
+                  <ProductPageLayout activeStep={4}>
+                    <ProductIngredients />
+                  </ProductPageLayout>
+                }
+              />
 
-                  </div>
+              <Route
+                path="/create-product-ingredients"
+                element={
+                  <ProductPageLayout activeStep={4}>
+                    <CreateProductIngredients />
+                  </ProductPageLayout>
+                }
+              />
+
+              <Route
+                path="/edit-product-ingredients/:id"
+                element={
+                  <ProductPageLayout activeStep={4}>
+                    <EditProductIngredients />
+                  </ProductPageLayout>
+                }
+              />
+
+              <Route
+                path="/view-product-ingredients/:id"
+                element={
+                  <ProductPageLayout activeStep={4}>
+                    <ViewProductIngredients />
+                  </ProductPageLayout>
                 }
               />
 

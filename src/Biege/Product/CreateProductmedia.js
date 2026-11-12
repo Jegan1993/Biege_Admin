@@ -114,7 +114,7 @@ function CreateProductmedia() {
 
       if (result?.status) {
         toast.success(result.message || "Product media created successfully");
-        navigate("/product-media");
+        navigate("/add-product/media");
       } else {
         toast.error(result?.message || "Failed to create product media");
       }
@@ -136,7 +136,7 @@ function CreateProductmedia() {
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => navigate("/product-media")}
+          onClick={() => navigate("/add-product/media")}
         >
           <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
           Back

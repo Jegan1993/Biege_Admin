@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import DataTable from "react-data-table-component";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
@@ -8,6 +9,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 function ViewProduct() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
@@ -15,16 +17,8 @@ function ViewProduct() {
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState("");
   const [showImageModal, setShowImageModal] = useState(false);
-  const navigate = useNavigate()
 
-  const productTabs = [
-    { id: "BASICS", label: "Basics", icon: "fa-circle-info" },
-    { id: "PRICING", label: "Pricing", icon: "fa-tag" },
-    { id: "MEDIA", label: "Media", icon: "fa-images" },
-    { id: "VARIANTS", label: "Variants", icon: "fa-layer-group" },
-    { id: "INGREDIENTS", label: "Ingredients", icon: "fa-flask" },
-    { id: "AI_TAGS", label: "AI Tags", icon: "fa-wand-magic-sparkles" },
-  ];
+  const navigate = useNavigate();
 
   const getProducts = useCallback(async () => {
     try {
@@ -54,7 +48,6 @@ function ViewProduct() {
   useEffect(() => {
     getProducts();
   }, [getProducts]);
-
 
   const handleDelete = async (id) => {
     try {
@@ -138,16 +131,13 @@ function ViewProduct() {
           </div>
         ),
       },
-
       {
         name: "PRODUCT NAME",
         selector: (row) => row.name,
         sortable: true,
         minWidth: "180px",
         cell: (row) => (
-          <span className="fw-semibold text-dark">
-            {row.name}
-          </span>
+          <span className="fw-semibold text-dark">{row.name}</span>
         ),
       },
       {
@@ -214,8 +204,7 @@ function ViewProduct() {
 
           return (
             <span
-              className={`badge px-3 py-2 ${statusClass[row.status] ||
-                "bg-light text-dark"
+              className={`badge px-3 py-2 ${statusClass[row.status] || "bg-light text-dark"
                 }`}
             >
               {row.status}
@@ -223,7 +212,6 @@ function ViewProduct() {
           );
         },
       },
-
       {
         name: "ACTION",
         width: "180px",
@@ -336,49 +324,13 @@ function ViewProduct() {
 
   return (
     <div className="container-fluid py-4">
-
+      {/* Page Header */}
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
           <h4 className="fw-bold mb-1">Products</h4>
           <p className="text-muted mb-0 small">
             Manage your skincare and beauty products
           </p>
-        </div>
-        {/* Product Tabs */}
-
-        <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body p-3">
-            <div className="d-flex flex-wrap gap-2">
-              {productTabs.map((tab) => {
-                const paths = {
-                  BASICS: "basic",
-                  PRICING: "pricing",
-                  MEDIA: "media",
-                  VARIANTS: "variants",
-                  INGREDIENTS: "ingredients",
-                  AI_TAGS: "ai-tags",
-                };
-
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    className="btn px-3 py-2 btn-outline-secondary"
-                    onClick={() => {
-                      if (tab.id === "BASICS") {
-                        navigate("/product-basics");
-                      } else {
-                        navigate(`/add-product/${paths[tab.id]}`);
-                      }
-                    }}
-                  >
-                    <i className={`fa-solid ${tab.icon} me-2`}></i>
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         <div className="d-flex gap-2">
@@ -403,8 +355,6 @@ function ViewProduct() {
         </div>
       </div>
 
-
-
       {/* Product Table Card */}
       <div className="card border-0 shadow-sm">
         <div className="card-body p-3 p-md-4">
@@ -422,6 +372,7 @@ function ViewProduct() {
                 <span className="input-group-text bg-white">
                   <i className="fa-solid fa-magnifying-glass text-muted"></i>
                 </span>
+
                 <input
                   type="text"
                   className="form-control"
@@ -446,7 +397,7 @@ function ViewProduct() {
             </div>
           )}
 
-          {/* DataTable */}
+          {/* DataTable - original pagination preserved */}
           <DataTable
             columns={columns}
             data={filteredProducts}
@@ -482,6 +433,7 @@ function ViewProduct() {
             }
           />
         </div>
+
         {/* Product Image Modal */}
         {showImageModal && (
           <div
@@ -521,10 +473,8 @@ function ViewProduct() {
           </div>
         )}
       </div>
-
     </div>
   );
 }
 
 export default ViewProduct;
-

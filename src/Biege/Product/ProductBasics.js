@@ -11,6 +11,7 @@ import {
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { FaEdit } from "react-icons/fa";
+
 function ProductBasics() {
   const navigate = useNavigate();
 
