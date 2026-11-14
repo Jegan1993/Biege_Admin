@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
 
-const AIRecommendations = ({ analysisId, productId }) => {
+const AIRecommendations = ({ productId }) => {
   const [recommendations, setRecommendations] = useState([]);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -13,8 +13,9 @@ const AIRecommendations = ({ analysisId, productId }) => {
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
 
   // Fetch AI Recommendations
+  // Fetch AI Recommendations
   const fetchRecommendations = useCallback(async () => {
-    if (!analysisId || !productId) {
+    if (!productId) {
       setRecommendations([]);
       setAnalysisResult(null);
       return;
@@ -26,11 +27,12 @@ const AIRecommendations = ({ analysisId, productId }) => {
       setAnalysisResult(null);
 
       const response = await makeApiRequest({
-        url: `skin-ai/recommendations/${encodeURIComponent(
-          analysisId
-        )}?productId=${encodeURIComponent(productId)}`,
+        url: `skin-ai/recommendations?productId=${encodeURIComponent(
+          productId
+        )}`,
         method: "GET",
       });
+
       if (!response?.status) {
         setRecommendations([]);
         setAnalysisResult(null);
@@ -66,13 +68,12 @@ const AIRecommendations = ({ analysisId, productId }) => {
     } finally {
       setLoading(false);
     }
-  }, [analysisId, productId]);
-
+  }, [productId]);
   useEffect(() => {
-    if (analysisId && productId) {
+    if (productId) {
       fetchRecommendations();
     }
-  }, [analysisId, productId, fetchRecommendations]);
+  }, [productId, fetchRecommendations]);
 
   // Get recommended product object
   const getProduct = (item) => {
@@ -138,10 +139,10 @@ const AIRecommendations = ({ analysisId, productId }) => {
   };
 
   // Validate required props
-  if (!analysisId || !productId) {
+  if ( !productId) {
     return (
       <div className="alert alert-warning">
-        Analysis ID and Product ID are required to show recommendations.
+         Product ID are required to show recommendations.
       </div>
     );
   }
@@ -485,7 +486,7 @@ const AIRecommendations = ({ analysisId, productId }) => {
 
                             <div className="col-md-6 mb-3">
                               <strong>Analysis ID</strong>
-                              <p className="mb-0">{analysisResult?._id || analysisId}</p>
+                              <p className="mb-0">{analysisResult?._id }</p>
                             </div>
 
                             <div className="col-md-6 mb-3">

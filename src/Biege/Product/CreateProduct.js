@@ -137,6 +137,7 @@ function CreateProduct() {
     if (fileInput) fileInput.value = "";
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -170,12 +171,23 @@ function CreateProduct() {
       });
 
       if (response.status) {
+        const createdProduct =
+          response?.data?.data ||
+          response?.data ||
+          response;
+
+        const productId = createdProduct?._id;
+
+        if (!productId) {
+          toast.error("Product created, but product ID was not received");
+          return;
+        }
+
         toast.success(
           response.message || "Product created successfully"
         );
 
-        resetForm();
-        navigate("/view-product");
+        navigate(`/add-product/${productId}/basic`);
       } else {
         toast.error(response.message || "Failed to create product");
       }
@@ -190,6 +202,7 @@ function CreateProduct() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="container-fluid py-4">
