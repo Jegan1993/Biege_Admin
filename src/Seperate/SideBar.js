@@ -45,14 +45,11 @@ import CreateProductIngredients from "../Biege/Product/CreateProductIngredients"
 import EditProductIngredients from "../Biege/Product/EditProductIngredients";
 import ViewProductIngredients from "../Biege/Product/ViewProductIngredients";
 
-import ProductAiTags from "../Biege/Product/ProductAiTags";
-
+import ProductAiTags from "../Biege/Product/ProductAiTags/ProductAiTags";
+import EditProductAiTags from "../Biege/Product/ProductAiTags/EditProductAiTags";
 // Common Product Layout
 import ProductPageLayout from "../Biege/Product/ProductPageLayout";
 
-// ==================================================
-// ADD PRODUCT STEP COMPONENT
-// ==================================================
 
 function AddProductStep() {
   const { productId, tab } = useParams();
@@ -95,11 +92,6 @@ function AddProductStep() {
 
   return <ProductPageLayout>{content}</ProductPageLayout>;
 }
-
-// ==================================================
-// EDIT PRODUCT STEP COMPONENT
-// ==================================================
-
 function EditProductStep() {
   const { id, tab } = useParams();
 
@@ -131,7 +123,7 @@ function EditProductStep() {
       break;
 
     case "ai-tags":
-      content = <ProductAiTags />;
+      content = <EditProductAiTags />;
       break;
 
     default:
@@ -145,10 +137,6 @@ function EditProductStep() {
 
   return <ProductPageLayout>{content}</ProductPageLayout>;
 }
-
-// ==================================================
-// SIDEBAR COMPONENT
-// ==================================================
 
 function SideBar() {
   const location = useLocation();

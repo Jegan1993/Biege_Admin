@@ -2,9 +2,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { makeApiRequest } from "../../AxiosServices/apiCall";
+import { makeApiRequest } from "../../../AxiosServices/apiCall.js";
 
-import AIRecommendations from "./AIRecommendations";
+import AIRecommendations from "./AIRecommendations.js";
 
 import {
   skinTypeOptions,
@@ -77,7 +77,8 @@ const ProductAiTags = () => {
 
         if (isWizard) {
           const selectedProduct = productList.find(
-            (product) => product._id === wizardProductId
+            (product) =>
+              String(product._id) === String(wizardProductId)
           );
 
           if (!selectedProduct) {
@@ -89,10 +90,14 @@ const ProductAiTags = () => {
 
           setForm((previous) => ({
             ...previous,
-            productId: wizardProductId,
+            productId: selectedProduct._id,
             productType: selectedProduct.type,
           }));
         }
+      } else {
+        toast.error(
+          response?.message || "Unable to fetch products"
+        );
       }
     } catch (error) {
       console.error("Fetch products error:", error);
@@ -116,14 +121,21 @@ const ProductAiTags = () => {
       toast.error("Unable to fetch AI tags");
     }
   };
-
-  // FILTER PRODUCTS BASED ON SKIN AI / LOOK AI
+  // FILTER PRODUCTS
+  // Create wizard: show only the product from the URL
+  // Standalone page: show products based on Skin AI / Look AI
   const filteredProducts = useMemo(() => {
+    if (isWizard) {
+      return products.filter(
+        (product) =>
+          String(product._id) === String(wizardProductId)
+      );
+    }
+
     return products.filter(
       (product) => product.type === aiMode
     );
-  }, [products, aiMode]);
-
+  }, [products, aiMode, isWizard, wizardProductId]);
   // FILTER AI TAGS BASED ON SKIN AI / LOOK AI
   const filteredTags = useMemo(() => {
     return aiTags.filter(
@@ -252,7 +264,7 @@ const ProductAiTags = () => {
     setForm({
       ...getEmptyAiTagForm(),
       productType: aiMode,
-      productId: isWizard ? wizardProductId : "",
+      productId: "",
     });
 
     setEditing(false);
@@ -261,12 +273,16 @@ const ProductAiTags = () => {
 
   // EDIT AI TAGS
   const handleEdit = (tag) => {
+    const productType = tag.product?.type || aiMode;
+
+    setAiMode(productType);
+
     setForm({
       ...getEmptyAiTagForm(),
 
       productId: tag.product?._id || "",
 
-      productType: tag.product?.type || aiMode,
+      productType,
 
       skinTypes: getArrayValue(tag.skinTypes).map((item) =>
         String(item).toLowerCase()
@@ -372,12 +388,27 @@ const ProductAiTags = () => {
       return;
     }
 
-    if (aiMode === "SKIN_CARE" && form.skinTypes.length === 0) {
+    // Prevent a different product ID from being submitted in wizard
+    if (
+      isWizard &&
+      String(form.productId) !== String(wizardProductId)
+    ) {
+      toast.error("Invalid product selected");
+      return;
+    }
+
+    if (
+      aiMode === "SKIN_CARE" &&
+      form.skinTypes.length === 0
+    ) {
       toast.error("Please select at least one skin type");
       return;
     }
 
-    if (aiMode === "BEAUTY" && !form.beauty.productRole) {
+    if (
+      aiMode === "BEAUTY" &&
+      !form.beauty.productRole
+    ) {
       toast.error("Please select product role");
       return;
     }
@@ -389,7 +420,8 @@ const ProductAiTags = () => {
 
       // Check whether AI tags already exist for this product
       const existingTag = aiTags.find(
-        (tag) => tag.product?._id === form.productId
+        (tag) =>
+          String(tag.product?._id) === String(form.productId)
       );
 
       const shouldUpdate = editing || Boolean(existingTag);
@@ -418,7 +450,9 @@ const ProductAiTags = () => {
         resetForm();
         fetchAiTags();
       } else {
-        toast.error(response?.message || "Something went wrong");
+        toast.error(
+          response?.message || "Something went wrong"
+        );
       }
     } catch (error) {
       console.error("Save AI tags error:", error);
@@ -542,7 +576,9 @@ const ProductAiTags = () => {
   // CANCEL FORM
   const handleCancel = () => {
     if (isWizard) {
-      navigate(`/add-product/${wizardProductId}/ingredients`);
+      navigate(
+        `/add-product/${wizardProductId}/ingredients`
+      );
       return;
     }
 
@@ -613,7 +649,9 @@ const ProductAiTags = () => {
                   className="form-select"
                   value={recommendationProductId}
                   onChange={(event) => {
-                    setRecommendationProductId(event.target.value);
+                    setRecommendationProductId(
+                      event.target.value
+                    );
                     setShowRecommendations(false);
                   }}
                 >
@@ -645,13 +683,14 @@ const ProductAiTags = () => {
               </div>
             </div>
 
-            {showRecommendations && recommendationProductId && (
-              <div className="mt-3">
-                <AIRecommendations
-                  productId={recommendationProductId}
-                />
-              </div>
-            )}
+            {showRecommendations &&
+              recommendationProductId && (
+                <div className="mt-3">
+                  <AIRecommendations
+                    productId={recommendationProductId}
+                  />
+                </div>
+              )}
           </div>
         </div>
       )}
@@ -669,34 +708,30 @@ const ProductAiTags = () => {
           <div className="card-body">
             <form onSubmit={handleSubmit}>
               <div className="row">
-                {!isWizard && (
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      Product <span className="text-danger">*</span>
-                    </label>
+                {/* PRODUCT DROPDOWN */}
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">
+                    Product <span className="text-danger">*</span>
+                  </label>
 
-                    <select
-                      className="form-select"
-                      value={form.productId}
-                      disabled={editing}
-                      onChange={(event) =>
-                        updateField("productId", event.target.value)
-                      }
-                      required
-                    >
-                      <option value="">Select Product</option>
+                  <select
+                    className="form-select"
+                    value={form.productId}
+                    disabled={isWizard || editing}
+                    onChange={(event) =>
+                      updateField("productId", event.target.value)
+                    }
+                    required
+                  >
+                    <option value="">Select Product</option>
 
-                      {filteredProducts.map((product) => (
-                        <option
-                          key={product._id}
-                          value={product._id}
-                        >
-                          {product.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                    {filteredProducts.map((product) => (
+                      <option key={product._id} value={product._id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div className="col-md-6 mb-3">
                   <label className="form-label">
@@ -707,7 +742,10 @@ const ProductAiTags = () => {
                     className="form-select"
                     value={form.priceBand}
                     onChange={(event) =>
-                      updateField("priceBand", event.target.value)
+                      updateField(
+                        "priceBand",
+                        event.target.value
+                      )
                     }
                   >
                     <option value="">Select Price Band</option>
@@ -791,7 +829,9 @@ const ProductAiTags = () => {
                             <select
                               className="form-select"
                               disabled={!selectedConcern}
-                              value={selectedConcern?.strength ?? 2}
+                              value={
+                                selectedConcern?.strength ?? 2
+                              }
                               onChange={(event) =>
                                 handleConcernChange(
                                   concern,
