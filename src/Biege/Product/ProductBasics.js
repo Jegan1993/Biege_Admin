@@ -2,11 +2,10 @@
 import React, { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-
   faTrash,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
@@ -69,9 +68,9 @@ function ProductBasics() {
       });
 
       const result = response?.data.data || response;
-      console.log('result------------', result)
+
       if (result?.status) {
-        toast.success("Product deleted successfully");
+        toast.success("Product basics deleted successfully");
         getProducts();
       } else {
         toast.error(result?.message || "Delete failed");
@@ -86,11 +85,14 @@ function ProductBasics() {
   // Search
   const filteredProducts = products.filter((product) => {
     const searchValue = search.toLowerCase();
+    const parentProduct = product.productId || {};
 
     return (
-      product.name?.toLowerCase().includes(searchValue) ||
+      parentProduct.name?.toLowerCase().includes(searchValue) ||
+      parentProduct.sku?.toLowerCase().includes(searchValue) ||
+      parentProduct.category?.toLowerCase().includes(searchValue) ||
+      parentProduct.type?.toLowerCase().includes(searchValue) ||
       product.slug?.toLowerCase().includes(searchValue) ||
-      product.category?.toLowerCase().includes(searchValue) ||
       product.brandLine?.toLowerCase().includes(searchValue)
     );
   });
@@ -106,19 +108,25 @@ function ProductBasics() {
     },
     {
       name: "Product Name",
-      selector: (row) => row.name,
+      selector: (row) => row.productId?.name || "-",
       sortable: true,
       minWidth: "180px",
     },
     {
+      name: "SKU",
+      selector: (row) => row.productId?.sku || "-",
+      sortable: true,
+      minWidth: "120px",
+    },
+    {
       name: "Slug",
-      selector: (row) => row.slug,
+      selector: (row) => row.slug || "-",
       sortable: true,
       minWidth: "160px",
     },
     {
       name: "Type",
-      selector: (row) => row.type,
+      selector: (row) => row.productId?.type || "-",
       sortable: true,
       minWidth: "120px",
     },
@@ -130,7 +138,7 @@ function ProductBasics() {
     },
     {
       name: "Category",
-      selector: (row) => row.category || "-",
+      selector: (row) => row.productId?.category || "-",
       sortable: true,
       minWidth: "130px",
     },
@@ -144,22 +152,24 @@ function ProductBasics() {
     },
     {
       name: "Status",
-      cell: (row) => (
-        <span
-          className={`badge ${row.status === "ACTIVE"
-            ? "bg-success"
-            : row.status === "ARCHIVED"
-              ? "bg-danger"
-              : "bg-warning text-dark"
-            }`}
-        >
-          {row.status}
-        </span>
-      ),
+      cell: (row) => {
+        const status = row.productId?.status;
+
+        return (
+          <span
+            className={`badge ${status === "ACTIVE"
+              ? "bg-success"
+              : status === "ARCHIVED"
+                ? "bg-danger"
+                : "bg-warning text-dark"
+              }`}
+          >
+            {status || "-"}
+          </span>
+        );
+      },
       sortable: true,
     },
-
-
     {
       name: "Action",
       width: "220px",
@@ -180,7 +190,9 @@ function ProductBasics() {
         >
           <button
             type="button"
-            onClick={() => navigate(`/edit-product-basic/${row._id}`)}
+            onClick={() =>
+              navigate(`/edit-product-basic/${row.productId?._id}`)
+            }
             style={{
               flexShrink: 0,
               display: "inline-flex",
@@ -201,7 +213,7 @@ function ProductBasics() {
 
           <button
             type="button"
-            onClick={() => handleDelete(row._id)}
+            onClick={() => handleDelete(row.productId?._id)}
             style={{
               flexShrink: 0,
               display: "inline-flex",
@@ -221,12 +233,13 @@ function ProductBasics() {
           </button>
         </div>
       ),
-    }
-
+    },
   ];
+
   const handleBack = () => {
-    navigate("/view-product")
-  }
+    navigate("/view-product");
+  };
+
   return (
     <div className="container-fluid">
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -240,6 +253,7 @@ function ProductBasics() {
           <FontAwesomeIcon icon={faPlus} className="me-2" />
           Add Basic Product
         </button>
+
         <button
           type="button"
           className="btn btn-primary"

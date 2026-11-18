@@ -1,9 +1,10 @@
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { makeApiRequest } from "../../AxiosServices/apiCall";
+import { makeApiRequest } from "../../../AxiosServices/apiCall.js";
 
-import AIRecommendations from "./AIRecommendations";
+import AIRecommendations from "./AIRecommendations.js";
 
 import {
   skinTypeOptions,
@@ -23,6 +24,11 @@ import {
 } from "./aiTagHelpers.js";
 
 const ProductAiTags = () => {
+  const navigate = useNavigate();
+  const { productId: wizardProductId } = useParams();
+
+  const isWizard = Boolean(wizardProductId);
+
   const [aiMode, setAiMode] = useState("SKIN_CARE");
 
   const [products, setProducts] = useState([]);
@@ -37,16 +43,26 @@ const ProductAiTags = () => {
   const [showView, setShowView] = useState(false);
 
   // AI Recommendation States
-  const [analysisId, setAnalysisId] = useState("");
   const [recommendationProductId, setRecommendationProductId] =
     useState("");
   const [showRecommendations, setShowRecommendations] = useState(false);
 
+  // INITIAL LOAD
   useEffect(() => {
     fetchProducts();
     fetchAiTags();
-  }, []);
 
+    if (isWizard) {
+      setForm({
+        ...getEmptyAiTagForm(),
+        productId: wizardProductId,
+      });
+
+      setShowForm(true);
+    }
+  }, [wizardProductId]);
+
+  // FETCH PRODUCTS
   const fetchProducts = async () => {
     try {
       const response = await makeApiRequest({
@@ -55,7 +71,33 @@ const ProductAiTags = () => {
       });
 
       if (response?.status) {
-        setProducts(response.data || []);
+        const productList = response.data || [];
+
+        setProducts(productList);
+
+        if (isWizard) {
+          const selectedProduct = productList.find(
+            (product) =>
+              String(product._id) === String(wizardProductId)
+          );
+
+          if (!selectedProduct) {
+            toast.error("Product not found");
+            return;
+          }
+
+          setAiMode(selectedProduct.type);
+
+          setForm((previous) => ({
+            ...previous,
+            productId: selectedProduct._id,
+            productType: selectedProduct.type,
+          }));
+        }
+      } else {
+        toast.error(
+          response?.message || "Unable to fetch products"
+        );
       }
     } catch (error) {
       console.error("Fetch products error:", error);
@@ -63,6 +105,7 @@ const ProductAiTags = () => {
     }
   };
 
+  // FETCH AI TAGS
   const fetchAiTags = async () => {
     try {
       const response = await makeApiRequest({
@@ -78,28 +121,41 @@ const ProductAiTags = () => {
       toast.error("Unable to fetch AI tags");
     }
   };
-
+  // FILTER PRODUCTS
+  // Create wizard: show only the product from the URL
+  // Standalone page: show products based on Skin AI / Look AI
   const filteredProducts = useMemo(() => {
+    if (isWizard) {
+      return products.filter(
+        (product) =>
+          String(product._id) === String(wizardProductId)
+      );
+    }
+
     return products.filter(
       (product) => product.type === aiMode
     );
-  }, [products, aiMode]);
-
+  }, [products, aiMode, isWizard, wizardProductId]);
+  // FILTER AI TAGS BASED ON SKIN AI / LOOK AI
   const filteredTags = useMemo(() => {
     return aiTags.filter(
       (tag) => tag.product?.type === aiMode
     );
   }, [aiTags, aiMode]);
+
+  // RESET FORM
   const resetForm = () => {
     setForm({
       ...getEmptyAiTagForm(),
       productType: aiMode,
+      productId: isWizard ? wizardProductId : "",
     });
 
     setEditing(false);
     setShowForm(false);
   };
 
+  // UPDATE NORMAL FIELD
   const updateField = (field, value) => {
     setForm((previous) => ({
       ...previous,
@@ -107,6 +163,7 @@ const ProductAiTags = () => {
     }));
   };
 
+  // UPDATE BEAUTY FIELD
   const updateBeautyField = (field, value) => {
     setForm((previous) => ({
       ...previous,
@@ -117,6 +174,7 @@ const ProductAiTags = () => {
     }));
   };
 
+  // HANDLE MULTI SELECT
   const handleMultiSelect = (field, value, checked) => {
     setForm((previous) => {
       const currentValues = getArrayValue(previous[field]);
@@ -130,6 +188,7 @@ const ProductAiTags = () => {
     });
   };
 
+  // HANDLE BEAUTY MULTI SELECT
   const handleBeautyMultiSelect = (field, value, checked) => {
     setForm((previous) => {
       const currentValues = getArrayValue(
@@ -148,6 +207,7 @@ const ProductAiTags = () => {
     });
   };
 
+  // HANDLE CONCERN STRENGTH
   const handleConcernChange = (concernName, strength) => {
     setForm((previous) => {
       const currentConcerns = [...previous.concerns];
@@ -175,6 +235,7 @@ const ProductAiTags = () => {
     });
   };
 
+  // HANDLE CONCERN CHECKBOX
   const handleConcernCheckbox = (concernName, checked) => {
     setForm((previous) => {
       const currentConcerns = [...previous.concerns];
@@ -183,7 +244,9 @@ const ProductAiTags = () => {
         ...previous,
         concerns: checked
           ? [
-            ...currentConcerns,
+            ...currentConcerns.filter(
+              (item) => item.name !== concernName
+            ),
             {
               name: concernName,
               strength: 2,
@@ -196,24 +259,30 @@ const ProductAiTags = () => {
     });
   };
 
+  // ADD AI TAGS
   const handleAdd = () => {
-    resetForm();
-
     setForm({
       ...getEmptyAiTagForm(),
       productType: aiMode,
+      productId: "",
     });
 
+    setEditing(false);
     setShowForm(true);
   };
 
+  // EDIT AI TAGS
   const handleEdit = (tag) => {
+    const productType = tag.product?.type || aiMode;
+
+    setAiMode(productType);
+
     setForm({
       ...getEmptyAiTagForm(),
 
       productId: tag.product?._id || "",
 
-      productType: tag.product?.type || aiMode,
+      productType,
 
       skinTypes: getArrayValue(tag.skinTypes).map((item) =>
         String(item).toLowerCase()
@@ -223,6 +292,7 @@ const ProductAiTags = () => {
         name: normalizeEnum(item.name),
         strength: Number(item.strength) || 2,
       })),
+
       routineStep: String(tag.routineStep || "").toLowerCase(),
 
       timeOfUse: normalizeEnum(tag.timeOfUse || "BOTH"),
@@ -259,16 +329,19 @@ const ProductAiTags = () => {
     setShowForm(true);
   };
 
+  // BUILD PAYLOAD
   const buildPayload = () => {
     return {
       productId: form.productId,
       productType: normalizeEnum(form.productType),
 
       skinTypes: form.skinTypes.map(normalizeEnum),
+
       concerns: form.concerns.map((item) => ({
         name: normalizeEnum(item.name),
         strength: Number(item.strength),
       })),
+
       routineStep: form.routineStep
         ? normalizeEnum(form.routineStep)
         : "",
@@ -306,6 +379,7 @@ const ProductAiTags = () => {
     };
   };
 
+  // CREATE / UPDATE AI TAGS
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -314,12 +388,27 @@ const ProductAiTags = () => {
       return;
     }
 
-    if (aiMode === "SKIN_CARE" && form.skinTypes.length === 0) {
+    // Prevent a different product ID from being submitted in wizard
+    if (
+      isWizard &&
+      String(form.productId) !== String(wizardProductId)
+    ) {
+      toast.error("Invalid product selected");
+      return;
+    }
+
+    if (
+      aiMode === "SKIN_CARE" &&
+      form.skinTypes.length === 0
+    ) {
       toast.error("Please select at least one skin type");
       return;
     }
 
-    if (aiMode === "BEAUTY" && !form.beauty.productRole) {
+    if (
+      aiMode === "BEAUTY" &&
+      !form.beauty.productRole
+    ) {
       toast.error("Please select product role");
       return;
     }
@@ -329,26 +418,41 @@ const ProductAiTags = () => {
 
       const payload = buildPayload();
 
+      // Check whether AI tags already exist for this product
+      const existingTag = aiTags.find(
+        (tag) =>
+          String(tag.product?._id) === String(form.productId)
+      );
+
+      const shouldUpdate = editing || Boolean(existingTag);
+
       const response = await makeApiRequest({
-        url: editing
+        url: shouldUpdate
           ? `updateproduct-ai-tags/${form.productId}`
           : "createproduct-ai-tags",
-        method: editing ? "PUT" : "POST",
+        method: shouldUpdate ? "PUT" : "POST",
         data: payload,
       });
 
       if (response?.status) {
         toast.success(
           response.message ||
-          (editing
+          (shouldUpdate
             ? "AI tags updated successfully"
             : "AI tags created successfully")
         );
 
+        if (isWizard) {
+          navigate("/view-product");
+          return;
+        }
+
         resetForm();
         fetchAiTags();
       } else {
-        toast.error(response?.message || "Something went wrong");
+        toast.error(
+          response?.message || "Something went wrong"
+        );
       }
     } catch (error) {
       console.error("Save AI tags error:", error);
@@ -362,6 +466,7 @@ const ProductAiTags = () => {
     }
   };
 
+  // DELETE AI TAGS
   const handleDelete = async (productId) => {
     if (
       !window.confirm(
@@ -398,15 +503,18 @@ const ProductAiTags = () => {
     }
   };
 
+  // VIEW AI TAGS
   const handleView = (tag) => {
     setSelectedTag(tag);
     setShowView(true);
   };
 
+  // GET PRODUCT NAME
   const getProductName = (tag) => {
     return tag.product?.name || "Product";
   };
 
+  // RENDER CHECKBOX OPTIONS
   const renderCheckboxOptions = (
     options,
     selectedValues,
@@ -438,13 +546,8 @@ const ProductAiTags = () => {
     );
   };
 
-  // AI Recommendation Handler
+  // AI RECOMMENDATION HANDLER
   const handleGetRecommendations = () => {
-    if (!analysisId.trim()) {
-      toast.error("Please enter Analysis ID");
-      return;
-    }
-
     if (!recommendationProductId) {
       toast.error("Please select a product");
       return;
@@ -453,12 +556,41 @@ const ProductAiTags = () => {
     setShowRecommendations(true);
   };
 
+  // CHANGE AI MODE
+  const handleModeChange = (mode) => {
+    setAiMode(mode);
+
+    setForm({
+      ...getEmptyAiTagForm(),
+      productType: mode,
+    });
+
+    setSelectedTag(null);
+    setShowForm(false);
+    setShowView(false);
+
+    setShowRecommendations(false);
+    setRecommendationProductId("");
+  };
+
+  // CANCEL FORM
+  const handleCancel = () => {
+    if (isWizard) {
+      navigate(
+        `/add-product/${wizardProductId}/ingredients`
+      );
+      return;
+    }
+
+    resetForm();
+  };
+
   return (
     <div className="container-fluid">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="mb-0">Product AI Tags</h4>
 
-        {!showForm && (
+        {!showForm && !isWizard && (
           <button
             type="button"
             className="btn btn-primary"
@@ -469,43 +601,35 @@ const ProductAiTags = () => {
         )}
       </div>
 
-      {/* Skin AI / Look AI */}
-      <div className="d-flex gap-2 mb-4">
-        <button
-          type="button"
-          className={`btn ${aiMode === "SKIN_CARE"
-            ? "btn-primary"
-            : "btn-outline-primary"
-            }`}
-          onClick={() => {
-            setAiMode("SKIN_CARE");
-            resetForm();
-            setShowRecommendations(false);
-            setRecommendationProductId("");
-          }}
-        >
-          Skin AI
-        </button>
+      {/* SKIN AI / LOOK AI */}
+      {!isWizard && (
+        <div className="d-flex gap-2 mb-4">
+          <button
+            type="button"
+            className={`btn ${aiMode === "SKIN_CARE"
+              ? "btn-primary"
+              : "btn-outline-primary"
+              }`}
+            onClick={() => handleModeChange("SKIN_CARE")}
+          >
+            Skin AI
+          </button>
 
-        <button
-          type="button"
-          className={`btn ${aiMode === "BEAUTY"
-            ? "btn-primary"
-            : "btn-outline-primary"
-            }`}
-          onClick={() => {
-            setAiMode("BEAUTY");
-            resetForm();
-            setShowRecommendations(false);
-            setRecommendationProductId("");
-          }}
-        >
-          Look AI
-        </button>
-      </div>
+          <button
+            type="button"
+            className={`btn ${aiMode === "BEAUTY"
+              ? "btn-primary"
+              : "btn-outline-primary"
+              }`}
+            onClick={() => handleModeChange("BEAUTY")}
+          >
+            Look AI
+          </button>
+        </div>
+      )}
 
-      {/* AI Recommendations - Skin AI Only */}
-      {aiMode === "SKIN_CARE" && (
+      {/* AI RECOMMENDATIONS - SKIN AI ONLY */}
+      {!isWizard && aiMode === "SKIN_CARE" && (
         <div className="card mb-4">
           <div className="card-header">
             <h5 className="mb-0">
@@ -516,47 +640,35 @@ const ProductAiTags = () => {
           <div className="card-body">
             <div className="row align-items-end">
               <div className="col-md-5 mb-3">
-                <label className="form-label">
-                  Analysis ID
-                </label>
-
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Enter Analysis ID"
-                  value={analysisId}
-                  onChange={(event) => {
-                    setAnalysisId(event.target.value);
-                    setShowRecommendations(false);
-                  }}
-                />
-              </div>
-
-              <div className="col-md-5 mb-3">
-                <label className="form-label">
-                  Product
+                <label className="form-label fw-semibold">
+                  Select Skin Care Product{" "}
+                  <span className="text-danger">*</span>
                 </label>
 
                 <select
                   className="form-select"
                   value={recommendationProductId}
                   onChange={(event) => {
-                    setRecommendationProductId(event.target.value);
+                    setRecommendationProductId(
+                      event.target.value
+                    );
                     setShowRecommendations(false);
                   }}
                 >
-                  <option value="">
-                    Select Product
-                  </option>
+                  <option value="">Select Product</option>
 
-                  {filteredProducts.map((product) => (
-                    <option
-                      key={product._id}
-                      value={product._id}
-                    >
-                      {product.name}
-                    </option>
-                  ))}
+                  {products
+                    .filter(
+                      (product) => product.type === "SKIN_CARE"
+                    )
+                    .map((product) => (
+                      <option
+                        key={product._id}
+                        value={product._id}
+                      >
+                        {product.name} ({product.sku})
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -571,19 +683,19 @@ const ProductAiTags = () => {
               </div>
             </div>
 
-            {showRecommendations && (
-              <div className="mt-3">
-                <AIRecommendations
-                  analysisId={analysisId.trim()}
-                  productId={recommendationProductId}
-                />
-              </div>
-            )}
+            {showRecommendations &&
+              recommendationProductId && (
+                <div className="mt-3">
+                  <AIRecommendations
+                    productId={recommendationProductId}
+                  />
+                </div>
+              )}
           </div>
         </div>
       )}
 
-      {/* Create / Edit Form */}
+      {/* CREATE / EDIT FORM */}
       {showForm && (
         <div className="card mb-4">
           <div className="card-header">
@@ -596,6 +708,7 @@ const ProductAiTags = () => {
           <div className="card-body">
             <form onSubmit={handleSubmit}>
               <div className="row">
+                {/* PRODUCT DROPDOWN */}
                 <div className="col-md-6 mb-3">
                   <label className="form-label">
                     Product <span className="text-danger">*</span>
@@ -604,7 +717,7 @@ const ProductAiTags = () => {
                   <select
                     className="form-select"
                     value={form.productId}
-                    disabled={editing}
+                    disabled={isWizard || editing}
                     onChange={(event) =>
                       updateField("productId", event.target.value)
                     }
@@ -613,10 +726,7 @@ const ProductAiTags = () => {
                     <option value="">Select Product</option>
 
                     {filteredProducts.map((product) => (
-                      <option
-                        key={product._id}
-                        value={product._id}
-                      >
+                      <option key={product._id} value={product._id}>
                         {product.name}
                       </option>
                     ))}
@@ -632,7 +742,10 @@ const ProductAiTags = () => {
                     className="form-select"
                     value={form.priceBand}
                     onChange={(event) =>
-                      updateField("priceBand", event.target.value)
+                      updateField(
+                        "priceBand",
+                        event.target.value
+                      )
                     }
                   >
                     <option value="">Select Price Band</option>
@@ -646,9 +759,11 @@ const ProductAiTags = () => {
                 </div>
               </div>
 
+              {/* SKIN AI CONFIGURATION */}
               {aiMode === "SKIN_CARE" && (
                 <>
                   <hr />
+
                   <h6 className="mb-3">
                     Skin AI Configuration
                   </h6>
@@ -714,7 +829,9 @@ const ProductAiTags = () => {
                             <select
                               className="form-select"
                               disabled={!selectedConcern}
-                              value={selectedConcern?.strength ?? 2}
+                              value={
+                                selectedConcern?.strength ?? 2
+                              }
                               onChange={(event) =>
                                 handleConcernChange(
                                   concern,
@@ -803,9 +920,11 @@ const ProductAiTags = () => {
                 </>
               )}
 
+              {/* LOOK AI CONFIGURATION */}
               {aiMode === "BEAUTY" && (
                 <>
                   <hr />
+
                   <h6 className="mb-3">
                     Look AI Configuration
                   </h6>
@@ -948,7 +1067,7 @@ const ProductAiTags = () => {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={resetForm}
+                  onClick={handleCancel}
                 >
                   Cancel
                 </button>
@@ -958,209 +1077,204 @@ const ProductAiTags = () => {
         </div>
       )}
 
-      {/* AI Tags Table */}
-      <div className="card">
-        <div className="card-header">
-          <h5 className="mb-0">
-            {aiMode === "SKIN_CARE"
-              ? "Skin AI Tags"
-              : "Look AI Tags"}
-          </h5>
-        </div>
+      {/* AI TAGS TABLE - HIDE IN WIZARD */}
+      {!isWizard && (
+        <div className="card">
+          <div className="card-header">
+            <h5 className="mb-0">
+              {aiMode === "SKIN_CARE"
+                ? "Skin AI Tags"
+                : "Look AI Tags"}
+            </h5>
+          </div>
 
-        <div className="card-body table-responsive">
-          <table className="table table-bordered table-hover align-middle">
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Product</th>
+          <div className="card-body table-responsive">
+            <table className="table table-bordered table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>Product</th>
 
-                {aiMode === "SKIN_CARE" ? (
-                  <>
-                    <th>Skin Types</th>
-                    <th>Concerns</th>
-                    <th>Routine Step</th>
-                  </>
-                ) : (
-                  <>
-                    <th>Product Role</th>
-                    <th>Finish</th>
-                    <th>Suitable Looks</th>
-                  </>
-                )}
+                  {aiMode === "SKIN_CARE" ? (
+                    <>
+                      <th>Skin Types</th>
+                      <th>Concerns</th>
+                      <th>Routine Step</th>
+                    </>
+                  ) : (
+                    <>
+                      <th>Product Role</th>
+                      <th>Finish</th>
+                      <th>Suitable Looks</th>
+                    </>
+                  )}
 
-                <th>AI Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+                  <th>AI Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {filteredTags.length > 0 ? (
-                filteredTags.map((tag, index) => (
-                  <tr key={tag._id}>
-                    <td>{index + 1}</td>
+              <tbody>
+                {filteredTags.length > 0 ? (
+                  filteredTags.map((tag, index) => (
+                    <tr key={tag._id}>
+                      <td>{index + 1}</td>
 
-                    <td>{getProductName(tag)}</td>
+                      <td>{getProductName(tag)}</td>
 
-                    {aiMode === "SKIN_CARE" ? (
-                      <>
-                        <td>
-                          {getArrayValue(tag.skinTypes)
-                            .map(formatLabel)
-                            .join(", ") || "-"}
-                        </td>
+                      {aiMode === "SKIN_CARE" ? (
+                        <>
+                          <td>
+                            {getArrayValue(tag.skinTypes)
+                              .map(formatLabel)
+                              .join(", ") || "-"}
+                          </td>
 
-                        <td>
-                          {getArrayValue(tag.concerns)
-                            .map((item) =>
-                              formatLabel(item.name)
+                          <td>
+                            {getArrayValue(tag.concerns)
+                              .map((item) =>
+                                formatLabel(item.name)
+                              )
+                              .join(", ") || "-"}
+                          </td>
+
+                          <td>
+                            {formatLabel(tag.routineStep || "-")}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td>
+                            {formatLabel(
+                              tag.beauty?.productRole || "-"
+                            )}
+                          </td>
+
+                          <td>
+                            {formatLabel(
+                              tag.beauty?.finish || "-"
+                            )}
+                          </td>
+
+                          <td>
+                            {getArrayValue(
+                              tag.beauty?.suitableLooks
                             )
-                            .join(", ") || "-"}
-                        </td>
+                              .map(formatLabel)
+                              .join(", ") || "-"}
+                          </td>
+                        </>
+                      )}
 
-                        <td>
-                          {formatLabel(tag.routineStep || "-")}
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td>
-                          {formatLabel(
-                            tag.beauty?.productRole || "-"
-                          )}
-                        </td>
+                      <td>
+                        <span
+                          className={`badge ${tag.includeInAIRecommendations
+                            ? "bg-success"
+                            : "bg-secondary"
+                            }`}
+                        >
+                          {tag.includeInAIRecommendations
+                            ? "Enabled"
+                            : "Disabled"}
+                        </span>
+                      </td>
 
-                        <td>
-                          {formatLabel(
-                            tag.beauty?.finish || "-"
-                          )}
-                        </td>
-
-                        <td>
-                          {getArrayValue(
-                            tag.beauty?.suitableLooks
-                          )
-                            .map(formatLabel)
-                            .join(", ") || "-"}
-                        </td>
-                      </>
-                    )}
-
-                    <td>
-                      <span
-                        className={`badge ${tag.includeInAIRecommendations
-                          ? "bg-success"
-                          : "bg-secondary"
-                          }`}
-                      >
-                        {tag.includeInAIRecommendations
-                          ? "Enabled"
-                          : "Disabled"}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                          flexWrap: "nowrap",
-                          minWidth: "210px",
-                        }}
-                      >
-                        {/* View */}
-                        <button
-                          type="button"
-                          onClick={() => handleView(tag)}
+                      <td>
+                        <div
                           style={{
-                            display: "inline-flex",
+                            display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            padding: "6px 13px",
-                            minWidth: "58px",
-                            backgroundColor: "#0dcaf0",
-                            color: "#ffffff",
-                            border: "1px solid #0dcaf0",
-                            borderRadius: "5px",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            visibility: "visible",
-                            opacity: 1,
+                            gap: "8px",
+                            flexWrap: "nowrap",
+                            minWidth: "210px",
                           }}
                         >
-                          View
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleView(tag)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "6px 13px",
+                              minWidth: "58px",
+                              backgroundColor: "#0dcaf0",
+                              color: "#ffffff",
+                              border: "1px solid #0dcaf0",
+                              borderRadius: "5px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                            }}
+                          >
+                            View
+                          </button>
 
-                        {/* Edit */}
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(tag)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: "6px 13px",
-                            minWidth: "58px",
-                            backgroundColor: "#0d6efd",
-                            color: "#ffffff",
-                            border: "1px solid #0d6efd",
-                            borderRadius: "5px",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            visibility: "visible",
-                            opacity: 1,
-                          }}
-                        >
-                          Edit
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(tag)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "6px 13px",
+                              minWidth: "58px",
+                              backgroundColor: "#0d6efd",
+                              color: "#ffffff",
+                              border: "1px solid #0d6efd",
+                              borderRadius: "5px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Edit
+                          </button>
 
-                        {/* Delete */}
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(tag.product?._id)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: "6px 13px",
-                            minWidth: "65px",
-                            backgroundColor: "#dc3545",
-                            color: "#ffffff",
-                            border: "1px solid #dc3545",
-                            borderRadius: "5px",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            visibility: "visible",
-                            opacity: 1,
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDelete(tag.product?._id)
+                            }
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "6px 13px",
+                              minWidth: "65px",
+                              backgroundColor: "#dc3545",
+                              color: "#ffffff",
+                              border: "1px solid #dc3545",
+                              borderRadius: "5px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="8"
+                      className="text-center py-4"
+                    >
+                      No AI tags found
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="8"
-                    className="text-center py-4"
-                  >
-                    No AI tags found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* View Modal */}
+      {/* VIEW MODAL */}
       {showView && selectedTag && (
         <div
           className="modal d-block"
@@ -1192,13 +1306,16 @@ const ProductAiTags = () => {
                 <p>
                   <strong>Product Type:</strong>{" "}
                   {formatLabel(
+                    selectedTag.product?.type ||
                     selectedTag.productType ||
                     selectedTag.type ||
                     ""
                   )}
                 </p>
 
-                {aiMode === "SKIN_CARE" ? (
+                {selectedTag.product?.type === "SKIN_CARE" ||
+                  (!selectedTag.product?.type &&
+                    aiMode === "SKIN_CARE") ? (
                   <>
                     <p>
                       <strong>Skin Types:</strong>{" "}

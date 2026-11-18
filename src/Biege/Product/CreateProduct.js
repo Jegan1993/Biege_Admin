@@ -22,6 +22,8 @@ function CreateProduct() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
 
   // Create and clean up image preview URL
   useEffect(() => {
@@ -35,6 +37,42 @@ function CreateProduct() {
 
     return () => URL.revokeObjectURL(previewUrl);
   }, [formData.image]);
+
+  // GET ACTIVE CATEGORIES
+  const getCategories = async () => {
+    try {
+      setCategoryLoading(true);
+
+      const response = await makeApiRequest({
+        url: "get-categories?status=ACTIVE&limit=500&page=1",
+        method: "GET",
+      });
+
+      if (response.status) {
+        const categoryData = Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        setCategories(categoryData);
+      } else {
+        setCategories([]);
+        toast.error(response.message || "Failed to fetch categories");
+      }
+    } catch (error) {
+      console.error("Get Categories Error:", error);
+      setCategories([]);
+
+      toast.error(
+        error.response?.data?.message || "Unable to load categories"
+      );
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getCategories();
+  }, []);
 
   // Handle normal input changes
   const handleChange = (e) => {
@@ -51,6 +89,7 @@ function CreateProduct() {
     }));
   };
 
+  // Handle image changes
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
 
@@ -61,6 +100,7 @@ function CreateProduct() {
         ...prev,
         image: "Please select a valid image file",
       }));
+
       e.target.value = "";
       return;
     }
@@ -70,6 +110,7 @@ function CreateProduct() {
         ...prev,
         image: "Image size must be less than 5 MB",
       }));
+
       e.target.value = "";
       return;
     }
@@ -85,6 +126,7 @@ function CreateProduct() {
     }));
   };
 
+  // Form validation
   const validateForm = () => {
     const newErrors = {};
 
@@ -96,7 +138,7 @@ function CreateProduct() {
       newErrors.sku = "SKU is required";
     }
 
-    if (!formData.category.trim()) {
+    if (!formData.category) {
       newErrors.category = "Category is required";
     }
 
@@ -129,14 +171,19 @@ function CreateProduct() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Reset form
   const resetForm = () => {
     setFormData(initialValues);
     setErrors({});
 
     const fileInput = document.getElementById("productImage");
-    if (fileInput) fileInput.value = "";
+
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
+  // Submit product
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -150,8 +197,8 @@ function CreateProduct() {
 
       const payload = new FormData();
 
-      payload.append("name", formData.name);
-      payload.append("sku", formData.sku);
+      payload.append("name", formData.name.trim());
+      payload.append("sku", formData.sku.trim());
       payload.append("category", formData.category);
       payload.append("type", formData.type);
       payload.append("price", formData.price);
@@ -170,12 +217,25 @@ function CreateProduct() {
       });
 
       if (response.status) {
+        const createdProduct =
+          response?.data?.data ||
+          response?.data ||
+          response;
+
+        const productId = createdProduct?._id;
+
+        if (!productId) {
+          toast.error(
+            "Product created, but product ID was not received"
+          );
+          return;
+        }
+
         toast.success(
           response.message || "Product created successfully"
         );
 
-        resetForm();
-        navigate("/view-product");
+        navigate(`/add-product/${productId}/basic`);
       } else {
         toast.error(response.message || "Failed to create product");
       }
@@ -233,7 +293,9 @@ function CreateProduct() {
                 />
 
                 {errors.name && (
-                  <div className="invalid-feedback">{errors.name}</div>
+                  <div className="invalid-feedback">
+                    {errors.name}
+                  </div>
                 )}
               </div>
 
@@ -254,7 +316,9 @@ function CreateProduct() {
                 />
 
                 {errors.sku && (
-                  <div className="invalid-feedback">{errors.sku}</div>
+                  <div className="invalid-feedback">
+                    {errors.sku}
+                  </div>
                 )}
               </div>
 
@@ -310,7 +374,14 @@ function CreateProduct() {
                         const fileInput =
                           document.getElementById("productImage");
 
-                        if (fileInput) fileInput.value = "";
+                        if (fileInput) {
+                          fileInput.value = "";
+                        }
+
+                        setErrors((prev) => ({
+                          ...prev,
+                          image: "",
+                        }));
                       }}
                     >
                       Remove Image
@@ -325,15 +396,31 @@ function CreateProduct() {
                   Category <span className="text-danger">*</span>
                 </label>
 
-                <input
-                  type="text"
+                <select
                   name="category"
-                  className={`form-control ${errors.category ? "is-invalid" : ""
+                  className={`form-select ${errors.category ? "is-invalid" : ""
                     }`}
-                  placeholder="Enter category"
                   value={formData.category}
                   onChange={handleChange}
-                />
+                  disabled={categoryLoading || categories.length === 0}
+                >
+                  <option value="">
+                    {categoryLoading
+                      ? "Loading categories..."
+                      : categories.length === 0
+                        ? "No active categories available"
+                        : "Select category"}
+                  </option>
+
+                  {categories.map((category) => (
+                    <option
+                      key={category._id}
+                      value={category._id}
+                    >
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
 
                 {errors.category && (
                   <div className="invalid-feedback">
@@ -361,7 +448,9 @@ function CreateProduct() {
                 </select>
 
                 {errors.type && (
-                  <div className="invalid-feedback">{errors.type}</div>
+                  <div className="invalid-feedback">
+                    {errors.type}
+                  </div>
                 )}
               </div>
 
@@ -384,7 +473,9 @@ function CreateProduct() {
                 />
 
                 {errors.price && (
-                  <div className="invalid-feedback">{errors.price}</div>
+                  <div className="invalid-feedback">
+                    {errors.price}
+                  </div>
                 )}
               </div>
 
@@ -407,7 +498,9 @@ function CreateProduct() {
                 />
 
                 {errors.stock && (
-                  <div className="invalid-feedback">{errors.stock}</div>
+                  <div className="invalid-feedback">
+                    {errors.stock}
+                  </div>
                 )}
               </div>
 
@@ -446,7 +539,7 @@ function CreateProduct() {
                   <button
                     type="submit"
                     className="btn btn-primary px-4"
-                    disabled={loading}
+                    disabled={loading || categoryLoading}
                   >
                     {loading ? (
                       <>

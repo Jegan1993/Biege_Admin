@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -25,20 +25,27 @@ const initialValues = {
 function CreateProductIngredients() {
   const navigate = useNavigate();
 
+  const { productId: wizardProductId, id } = useParams();
+
+  const isWizard = Boolean(wizardProductId);
+  const isEditWizard = Boolean(id);
+
+  const activeProductId = wizardProductId || id;
+
   const [products, setProducts] = useState([]);
-  const [formData, setFormData] = useState(initialValues);
+
+  const [formData, setFormData] = useState({
+    ...initialValues,
+    productId: activeProductId || "",
+  });
+
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    getProducts();
-  }, []);
+  const [ingredientsExists, setIngredientsExists] = useState(false);
 
   // GET PRODUCTS
   const getProducts = async () => {
     try {
-      setLoading(true);
-
       const response = await makeApiRequest({
         url: "getproduct",
         method: "GET",
@@ -51,13 +58,91 @@ function CreateProductIngredients() {
       }
     } catch (error) {
       console.error("Get products error:", error);
+
       toast.error(
         error?.response?.data?.message || "Failed to fetch products"
+      );
+    }
+  };
+
+  // GET EXISTING INGREDIENTS
+  const getProductIngredients = async (selectedProductId) => {
+    if (!selectedProductId) return;
+
+    try {
+      setLoading(true);
+
+      const response = await makeApiRequest({
+        url: `getproduct-ingredients/${selectedProductId}`,
+        method: "GET",
+      });
+
+      if (response?.status && response.data) {
+        const data = response.data;
+
+        setIngredientsExists(true);
+
+        setFormData({
+          productId: selectedProductId,
+
+          ingredientList:
+            Array.isArray(data.ingredientList) &&
+              data.ingredientList.length > 0
+              ? data.ingredientList
+              : [""],
+
+          keyActives:
+            Array.isArray(data.keyActives) &&
+              data.keyActives.length > 0
+              ? data.keyActives.map((item) => ({
+                name: item.name || "",
+                percentage: item.percentage ?? "",
+              }))
+              : [{ name: "", percentage: "" }],
+
+          freeFrom: {
+            fragranceFree: Boolean(data.freeFrom?.fragranceFree),
+            parabenFree: Boolean(data.freeFrom?.parabenFree),
+            vegan: Boolean(data.freeFrom?.vegan),
+            crueltyFree: Boolean(data.freeFrom?.crueltyFree),
+          },
+        });
+      } else {
+        setIngredientsExists(false);
+
+        toast.error(
+          response?.message || "Failed to fetch product ingredients"
+        );
+      }
+    } catch (error) {
+      console.error("Get ingredients error:", error);
+
+      setIngredientsExists(false);
+
+      toast.error(
+        error?.response?.data?.message ||
+        "Failed to fetch existing ingredients"
       );
     } finally {
       setLoading(false);
     }
   };
+
+  // INITIAL LOAD
+  useEffect(() => {
+    getProducts();
+
+    if (activeProductId) {
+      setFormData((prev) => ({
+        ...prev,
+        productId: activeProductId,
+      }));
+
+      if (isEditWizard) {
+        getProductIngredients(activeProductId);
+      }
+    }
+  }, [wizardProductId, id]);
 
   // PRODUCT CHANGE
   const handleChange = (e) => {
@@ -72,6 +157,7 @@ function CreateProductIngredients() {
   // INGREDIENT LIST CHANGE
   const handleIngredientChange = (index, value) => {
     const updatedIngredients = [...formData.ingredientList];
+
     updatedIngredients[index] = value;
 
     setFormData((prev) => ({
@@ -90,7 +176,9 @@ function CreateProductIngredients() {
   const removeIngredient = (index) => {
     setFormData((prev) => ({
       ...prev,
-      ingredientList: prev.ingredientList.filter((_, i) => i !== index),
+      ingredientList: prev.ingredientList.filter(
+        (_, i) => i !== index
+      ),
     }));
   };
 
@@ -122,7 +210,9 @@ function CreateProductIngredients() {
   const removeActive = (index) => {
     setFormData((prev) => ({
       ...prev,
-      keyActives: prev.keyActives.filter((_, i) => i !== index),
+      keyActives: prev.keyActives.filter(
+        (_, i) => i !== index
+      ),
     }));
   };
 
@@ -139,40 +229,87 @@ function CreateProductIngredients() {
     }));
   };
 
-  // CREATE INGREDIENTS
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.productId) {
-      toast.error("Please select a product");
-      return;
+  // BACK
+  const handleBack = () => {
+    if (isEditWizard) {
+      navigate(`/edit-product/${id}/variants`);
+    } else if (isWizard) {
+      navigate(`/add-product/${wizardProductId}/variants`);
+    } else {
+      navigate("/add-product/ingredients");
     }
+  };
 
+  // CANCEL
+  const handleCancel = () => {
+    if (isEditWizard) {
+      navigate("/view-product");
+    } else if (isWizard) {
+      navigate(`/add-product/${wizardProductId}/variants`);
+    } else {
+      navigate("/product-ingredients");
+    }
+  };
+
+  // VALIDATE AND PREPARE PAYLOAD
+  const preparePayload = () => {
     const ingredientList = formData.ingredientList
       .map((item) => item.trim())
       .filter(Boolean);
 
-    const keyActives = formData.keyActives
-      .filter((item) => item.name.trim() !== "")
-      .map((item) => ({
-        name: item.name.trim(),
-        percentage: Number(item.percentage),
-      }));
+    const enteredActives = formData.keyActives.filter(
+      (item) => item.name.trim() !== ""
+    );
+
+    const keyActives = enteredActives.map((item) => ({
+      name: item.name.trim(),
+      percentage: Number(item.percentage),
+    }));
+
+    if (!formData.productId) {
+      toast.error("Please select a product");
+      return null;
+    }
 
     if (ingredientList.length === 0) {
       toast.error("Please enter at least one ingredient");
-      return;
+      return null;
     }
 
     if (
-      keyActives.some(
+      enteredActives.some(
         (item) =>
-          !Number.isFinite(item.percentage) ||
-          item.percentage < 0 ||
-          item.percentage > 100
+          item.percentage === "" ||
+          !Number.isFinite(Number(item.percentage)) ||
+          Number(item.percentage) < 0 ||
+          Number(item.percentage) > 100
       )
     ) {
-      toast.error("Please enter valid active ingredient percentages (0-100)");
+      toast.error(
+        "Please enter valid active ingredient percentages (0-100)"
+      );
+      return null;
+    }
+
+    return {
+      ingredientList,
+      keyActives,
+      freeFrom: formData.freeFrom,
+    };
+  };
+
+  // CREATE / UPDATE INGREDIENTS
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (submitting) return;
+
+    const payload = preparePayload();
+
+    if (!payload) return;
+
+    if (isEditWizard && !ingredientsExists) {
+      toast.error("Existing ingredients record was not found");
       return;
     }
 
@@ -180,29 +317,50 @@ function CreateProductIngredients() {
       setSubmitting(true);
 
       const response = await makeApiRequest({
-        url: "createproduct-ingredients",
-        method: "POST",
-        data: {
-          productId: formData.productId,
-          ingredientList,
-          keyActives,
-          freeFrom: formData.freeFrom,
-        },
+        url: isEditWizard
+          ? `updateproduct-ingredients/${id}`
+          : "createproduct-ingredients",
+
+        method: isEditWizard ? "PUT" : "POST",
+
+        data: isEditWizard
+          ? payload
+          : {
+            productId: formData.productId,
+            ...payload,
+          },
       });
 
       if (response?.status) {
         toast.success(
-          response.message || "Product ingredients created successfully"
+          response.message ||
+          (isEditWizard
+            ? "Product ingredients updated successfully"
+            : "Product ingredients created successfully")
         );
+
+        if (isEditWizard) {
+          navigate("/view-product");
+          return;
+        }
+
+        if (isWizard) {
+          navigate(`/add-product/${wizardProductId}/ai-tags`);
+          return;
+        }
 
         navigate("/product-ingredients");
       } else {
-        toast.error(response?.message || "Failed to create ingredients");
+        toast.error(
+          response?.message || "Failed to save ingredients"
+        );
       }
     } catch (error) {
-      console.error("Create ingredients error:", error);
+      console.error("Save ingredients error:", error);
+
       toast.error(
-        error?.response?.data?.message || "Failed to create ingredients"
+        error?.response?.data?.message ||
+        "Failed to save product ingredients"
       );
     } finally {
       setSubmitting(false);
@@ -212,220 +370,252 @@ function CreateProductIngredients() {
   return (
     <div className="container-fluid mt-3">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4>Create Product Ingredients</h4>
+        <h4>
+          {isEditWizard
+            ? "Update Product Ingredients"
+            : "Create Product Ingredients"}
+        </h4>
 
         <button
           type="button"
           className="btn btn-secondary"
-          onClick={() => navigate("/add-product/ingredients0")}
+          onClick={handleBack}
         >
           <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
           Back
         </button>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        {/* PRODUCT */}
-        <div className="card shadow-sm mb-4">
-          <div className="card-header">
-            <h5 className="mb-0">Product Information</h5>
-          </div>
-
-          <div className="card-body">
-            <label className="form-label fw-bold">
-              Select Product <span className="text-danger">*</span>
-            </label>
-
-            <select
-              name="productId"
-              className="form-select"
-              value={formData.productId}
-              onChange={handleChange}
-              disabled={loading}
-              required
-            >
-              <option value="">
-                {loading ? "Loading products..." : "Select Product"}
-              </option>
-
-              {products.map((product) => (
-                <option key={product._id} value={product._id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
+      {loading ? (
+        <div className="card shadow-sm">
+          <div className="card-body text-center py-5">
+            Loading product ingredients...
           </div>
         </div>
-
-        {/* INGREDIENT LIST */}
-        <div className="card shadow-sm mb-4">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Ingredient List</h5>
-
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              onClick={addIngredient}
-            >
-              <FontAwesomeIcon icon={faPlus} className="me-1" />
-              Add Ingredient
-            </button>
-          </div>
-
-          <div className="card-body">
-            {formData.ingredientList.map((ingredient, index) => (
-              <div className="row align-items-center mb-3" key={index}>
-                <div className="col-md-10">
-                  <label className="form-label">
-                    Ingredient {index + 1}
-                  </label>
-
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter ingredient name"
-                    value={ingredient}
-                    onChange={(e) =>
-                      handleIngredientChange(index, e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="col-md-2 mt-4">
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    disabled={formData.ingredientList.length === 1}
-                    onClick={() => removeIngredient(index)}
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                </div>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          {/* PRODUCT */}
+          {!isWizard && !isEditWizard && (
+            <div className="card shadow-sm mb-4">
+              <div className="card-header">
+                <h5 className="mb-0">Product Information</h5>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* KEY ACTIVES */}
-        <div className="card shadow-sm mb-4">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Key Actives</h5>
+              <div className="card-body">
+                <label className="form-label fw-bold">
+                  Select Product{" "}
+                  <span className="text-danger">*</span>
+                </label>
 
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              onClick={addActive}
-            >
-              <FontAwesomeIcon icon={faPlus} className="me-1" />
-              Add Active
-            </button>
-          </div>
+                <select
+                  name="productId"
+                  className="form-select"
+                  value={formData.productId}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                >
+                  <option value="">Select Product</option>
 
-          <div className="card-body">
-            {formData.keyActives.map((active, index) => (
-              <div className="row align-items-center mb-3" key={index}>
-                <div className="col-md-6">
-                  <label className="form-label">
-                    Active Ingredient {index + 1}
-                  </label>
-
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter active ingredient"
-                    value={active.name}
-                    onChange={(e) =>
-                      handleActiveChange(index, "name", e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="col-md-4">
-                  <label className="form-label">Percentage (%)</label>
-
-                  <input
-                    type="number"
-                    className="form-control"
-                    placeholder="0 - 100"
-                    min="0"
-                    max="100"
-                    step="any"
-                    value={active.percentage}
-                    onChange={(e) =>
-                      handleActiveChange(index, "percentage", e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="col-md-2 mt-4">
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    disabled={formData.keyActives.length === 1}
-                    onClick={() => removeActive(index)}
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                </div>
+                  {products.map((product) => (
+                    <option key={product._id} value={product._id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
 
-        {/* FREE FROM */}
-        <div className="card shadow-sm mb-4">
-          <div className="card-header">
-            <h5 className="mb-0">Free From Information</h5>
-          </div>
+          {/* INGREDIENT LIST */}
+          <div className="card shadow-sm mb-4">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">Ingredient List</h5>
 
-          <div className="card-body">
-            <div className="row">
-              {[
-                { name: "fragranceFree", label: "Fragrance Free" },
-                { name: "parabenFree", label: "Paraben Free" },
-                { name: "vegan", label: "Vegan" },
-                { name: "crueltyFree", label: "Cruelty Free" },
-              ].map((item) => (
-                <div className="col-md-3 col-sm-6 mb-3" key={item.name}>
-                  <div className="form-check form-switch">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id={item.name}
-                      name={item.name}
-                      checked={formData.freeFrom[item.name]}
-                      onChange={handleFreeFromChange}
-                    />
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={addIngredient}
+              >
+                <FontAwesomeIcon icon={faPlus} className="me-1" />
+                Add Ingredient
+              </button>
+            </div>
 
-                    <label className="form-check-label" htmlFor={item.name}>
-                      {item.label}
+            <div className="card-body">
+              {formData.ingredientList.map((ingredient, index) => (
+                <div className="row align-items-center mb-3" key={index}>
+                  <div className="col-md-10">
+                    <label className="form-label">
+                      Ingredient {index + 1}
                     </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter ingredient name"
+                      value={ingredient}
+                      onChange={(e) =>
+                        handleIngredientChange(index, e.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="col-md-2 mt-4">
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      disabled={formData.ingredientList.length === 1}
+                      onClick={() => removeIngredient(index)}
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* SUBMIT */}
-        <div className="d-flex justify-content-end gap-2 mb-4">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => navigate("/product-ingredients")}
-          >
-            Cancel
-          </button>
+          {/* KEY ACTIVES */}
+          <div className="card shadow-sm mb-4">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">Key Actives</h5>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={submitting || loading}
-          >
-            {submitting ? "Saving..." : "Create Ingredients"}
-          </button>
-        </div>
-      </form>
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={addActive}
+              >
+                <FontAwesomeIcon icon={faPlus} className="me-1" />
+                Add Active
+              </button>
+            </div>
+
+            <div className="card-body">
+              {formData.keyActives.map((active, index) => (
+                <div className="row align-items-center mb-3" key={index}>
+                  <div className="col-md-6">
+                    <label className="form-label">
+                      Active Ingredient {index + 1}
+                    </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter active ingredient"
+                      value={active.name}
+                      onChange={(e) =>
+                        handleActiveChange(index, "name", e.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="col-md-4">
+                    <label className="form-label">Percentage (%)</label>
+
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="0 - 100"
+                      min="0"
+                      max="100"
+                      step="any"
+                      value={active.percentage}
+                      onChange={(e) =>
+                        handleActiveChange(
+                          index,
+                          "percentage",
+                          e.target.value
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="col-md-2 mt-4">
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      disabled={formData.keyActives.length === 1}
+                      onClick={() => removeActive(index)}
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* FREE FROM */}
+          <div className="card shadow-sm mb-4">
+            <div className="card-header">
+              <h5 className="mb-0">Free From Information</h5>
+            </div>
+
+            <div className="card-body">
+              <div className="row">
+                {[
+                  { name: "fragranceFree", label: "Fragrance Free" },
+                  { name: "parabenFree", label: "Paraben Free" },
+                  { name: "vegan", label: "Vegan" },
+                  { name: "crueltyFree", label: "Cruelty Free" },
+                ].map((item) => (
+                  <div
+                    className="col-md-3 col-sm-6 mb-3"
+                    key={item.name}
+                  >
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={item.name}
+                        name={item.name}
+                        checked={formData.freeFrom[item.name]}
+                        onChange={handleFreeFromChange}
+                      />
+
+                      <label
+                        className="form-check-label"
+                        htmlFor={item.name}
+                      >
+                        {item.label}
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* SUBMIT */}
+          <div className="d-flex justify-content-end gap-2 mb-4">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleCancel}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                submitting ||
+                loading ||
+                (isEditWizard && !ingredientsExists)
+              }
+            >
+              {submitting
+                ? "Saving..."
+                : isEditWizard
+                  ? "Update Ingredients"
+                  : "Create Ingredients"}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

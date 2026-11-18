@@ -3,6 +3,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const productTabs = [
+  { id: "CREATE", label: "Create Product", path: "product" },
   { id: "BASICS", label: "Basics", path: "basic" },
   { id: "PRICING", label: "Pricing", path: "pricing" },
   { id: "MEDIA", label: "Media", path: "media" },
@@ -12,6 +13,7 @@ const productTabs = [
 ];
 
 const standaloneRoutes = [
+  "/create-product",
   "/product-basics",
   "/product-pricing",
   "/product-media",
@@ -27,13 +29,15 @@ function ProductStepNavigation({ position = "top", activeStep }) {
   const pathname = location.pathname;
   const pathParts = pathname.split("/").filter(Boolean);
 
-  const isEditWizard =
-    pathParts[0] === "edit-product" && pathParts.length >= 3;
-
+  const isEditWizard = pathParts[0] === "edit-product";
   const isAddWizard =
-    pathParts[0] === "add-product" && pathParts.length >= 2;
+    pathParts[0] === "add-product" ||
+    pathname === "/create-product";
 
-  const productId = isEditWizard ? pathParts[1] : null;
+  const productId =
+    isEditWizard || (isAddWizard && pathParts.length >= 3)
+      ? pathParts[1]
+      : null;
 
   let detectedIndex = standaloneRoutes.indexOf(pathname);
 
@@ -41,9 +45,11 @@ function ProductStepNavigation({ position = "top", activeStep }) {
     detectedIndex = productTabs.findIndex(
       (tab) => tab.path === pathParts[2]
     );
-  } else if (isAddWizard) {
+  } else if (pathname === "/create-product") {
+    detectedIndex = 0;
+  } else if (pathParts[0] === "add-product") {
     detectedIndex = productTabs.findIndex(
-      (tab) => tab.path === pathParts[1]
+      (tab) => tab.path === pathParts[2]
     );
   }
 
@@ -51,27 +57,34 @@ function ProductStepNavigation({ position = "top", activeStep }) {
     ? activeStep
     : detectedIndex;
 
-
   const navigateToStep = (index) => {
-
-    if (index < 0 && pathname === "/product-basics") {
-      navigate("/view-product");
-      return;
-    }
-
     if (index < 0 || index >= productTabs.length) return;
 
     const selectedTab = productTabs[index];
 
     if (isEditWizard) {
       navigate(`/edit-product/${productId}/${selectedTab.path}`);
-    } else if (isAddWizard) {
-      navigate(`/add-product/${selectedTab.path}`);
-    } else {
-      navigate(standaloneRoutes[index]);
+      return;
     }
+
+    if (isAddWizard) {
+      if (index === 0) {
+        navigate("/create-product");
+        return;
+      }
+
+      if (!productId) return;
+
+      navigate(`/add-product/${productId}/${selectedTab.path}`);
+      return;
+    }
+
+    navigate(standaloneRoutes[index]);
   };
-  // TOP NAVIGATION
+
+  const isStepDisabled = (index) =>
+    isAddWizard && !productId && index > 0;
+
   if (position === "top") {
     return (
       <div
@@ -87,6 +100,7 @@ function ProductStepNavigation({ position = "top", activeStep }) {
           <button
             key={tab.id}
             type="button"
+            disabled={isStepDisabled(index)}
             onClick={() => navigateToStep(index)}
             style={{
               flex: "1 0 auto",
@@ -101,7 +115,8 @@ function ProductStepNavigation({ position = "top", activeStep }) {
               padding: "16px 14px",
               fontSize: "13px",
               fontWeight: activeIndex === index ? 600 : 500,
-              cursor: "pointer",
+              cursor: isStepDisabled(index) ? "not-allowed" : "pointer",
+              opacity: isStepDisabled(index) ? 0.5 : 1,
             }}
           >
             {index + 1}. {tab.label}
@@ -111,116 +126,17 @@ function ProductStepNavigation({ position = "top", activeStep }) {
     );
   }
 
-  // BOTTOM NAVIGATION
-
-  // if (position === "bottom") {
-  //   if (activeIndex < 0 || activeIndex >= productTabs.length) {
-  //     return null;
-  //   }
-
-  //   const previousTab = productTabs[activeIndex - 1];
-  //   const nextTab = productTabs[activeIndex + 1];
-
-  //   return (
-  //     <div
-  //       style={{
-  //         display: "flex",
-  //         justifyContent: "space-between",
-  //         alignItems: "center",
-  //         width: "100%",
-  //         minHeight: "60px",
-  //         padding: "12px 16px",
-  //         borderTop: "1px solid #dee2e6",
-  //         boxSizing: "border-box",
-  //       }}
-  //     >
-  //       {/* LEFT SIDE */}
-  //       <span
-  //         style={{
-  //           fontSize: "13px",
-  //           color: "#64748b",
-  //           whiteSpace: "nowrap",
-  //         }}
-  //       >
-  //         Step {activeIndex + 1} of {productTabs.length}
-  //       </span>
-
-  //       {/* RIGHT SIDE */}
-  //       <div
-  //         style={{
-  //           display: "flex",
-  //           alignItems: "center",
-  //           gap: "10px",
-  //           marginLeft: "auto",
-  //         }}
-  //       >
-  //         <button
-  //           type="button"
-  //           disabled={
-  //             !previousTab && pathname !== "/product-basics"
-  //           }
-
-  //           onClick={() => navigateToStep(activeIndex - 1)}
-  //           style={{
-  //             padding: "8px 20px",
-  //             border: "1px solid #ced4da",
-  //             borderRadius: "5px",
-  //             backgroundColor: "#ffffff",
-  //             color: "#495057",
-  //             cursor: previousTab ? "pointer" : "not-allowed",
-  //             opacity: previousTab ? 1 : 0.5,
-  //           }}
-  //         >
-  //           <i className="fa-solid fa-arrow-left me-2"></i>
-  //           Previous
-  //         </button>
-
-
-
-  //         <button
-  //           type="button"
-  //           disabled={!nextTab}
-  //           onClick={() => navigateToStep(activeIndex + 1)}
-  //           style={{
-  //             padding: "8px 20px",
-  //             border: "1px solid #7650b5",
-  //             borderRadius: "5px",
-  //             backgroundColor: "#7650b5",
-  //             color: "#ffffff",
-  //             cursor: nextTab ? "pointer" : "not-allowed",
-  //             opacity: nextTab ? 1 : 0.5,
-  //           }}
-  //         >
-  //           Next
-  //           <i className="fa-solid fa-arrow-right ms-2"></i>
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-
-  // BOTTOM NAVIGATION
-
   if (position === "bottom") {
-    const isViewProduct = pathname === "/view-product";
-
-    if (
-      (activeIndex < 0 && !isViewProduct) ||
-      activeIndex >= productTabs.length
-    ) {
-      return null;
-    }
-
     const previousTab =
-      activeIndex >= 0
-        ? productTabs[activeIndex - 1]
-        : null;
+      activeIndex > 0 ? productTabs[activeIndex - 1] : null;
 
     const nextTab =
-      activeIndex < 0
-        ? productTabs[0]
-        : productTabs[activeIndex + 1];
+      activeIndex >= 0 && activeIndex < productTabs.length - 1
+        ? productTabs[activeIndex + 1]
+        : null;
+
+    const nextDisabled =
+      !nextTab || (isAddWizard && !productId);
 
     return (
       <div
@@ -235,47 +151,16 @@ function ProductStepNavigation({ position = "top", activeStep }) {
           boxSizing: "border-box",
         }}
       >
-        {/* LEFT SIDE */}
-        <span
-          style={{
-            fontSize: "13px",
-            color: "#64748b",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {isViewProduct
-            ? ""
-            : `Step ${activeIndex + 1} of ${productTabs.length}`}
+        <span style={{ fontSize: "13px", color: "#64748b" }}>
+          Step {activeIndex + 1} of {productTabs.length}
         </span>
 
-        {/* RIGHT SIDE */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            marginLeft: "auto",
-          }}
-        >
+        <div className="d-flex align-items-center gap-2">
           <button
             type="button"
-            disabled={!previousTab && pathname !== "/product-basics"}
+            disabled={!previousTab}
             onClick={() => navigateToStep(activeIndex - 1)}
-            style={{
-              padding: "8px 20px",
-              border: "1px solid #ced4da",
-              borderRadius: "5px",
-              backgroundColor: "#ffffff",
-              color: "#495057",
-              cursor:
-                !previousTab && pathname !== "/product-basics"
-                  ? "not-allowed"
-                  : "pointer",
-              opacity:
-                !previousTab && pathname !== "/product-basics"
-                  ? 0.5
-                  : 1,
-            }}
+            className="btn btn-outline-secondary"
           >
             <i className="fa-solid fa-arrow-left me-2"></i>
             Previous
@@ -283,28 +168,23 @@ function ProductStepNavigation({ position = "top", activeStep }) {
 
           <button
             type="button"
-            disabled={!nextTab}
+            disabled={nextDisabled}
             onClick={() => navigateToStep(activeIndex + 1)}
+            className="btn btn-primary"
             style={{
-              padding: "8px 20px",
-              border: "1px solid #7650b5",
-              borderRadius: "5px",
               backgroundColor: "#7650b5",
-              color: "#ffffff",
-              cursor: nextTab ? "pointer" : "not-allowed",
-              opacity: nextTab ? 1 : 0.5,
+              borderColor: "#7650b5",
             }}
           >
             Next
             <i className="fa-solid fa-arrow-right ms-2"></i>
           </button>
         </div>
-      </div >
+      </div>
     );
   }
 
   return null;
-
 }
 
 export default ProductStepNavigation;

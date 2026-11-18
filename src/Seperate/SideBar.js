@@ -45,23 +45,24 @@ import CreateProductIngredients from "../Biege/Product/CreateProductIngredients"
 import EditProductIngredients from "../Biege/Product/EditProductIngredients";
 import ViewProductIngredients from "../Biege/Product/ViewProductIngredients";
 
-import ProductAiTags from "../Biege/Product/ProductAiTags";
-
+import ProductAiTags from "../Biege/Product/ProductAiTags/ProductAiTags";
+import EditProductAiTags from "../Biege/Product/ProductAiTags/EditProductAiTags";
 // Common Product Layout
 import ProductPageLayout from "../Biege/Product/ProductPageLayout";
+import ViewCategories from "../Biege/Categories/ViewCategories";
+import ViewCollections from "../Biege/Categories/ViewCollections";
+import ViewInventory from "../Biege/Inventory/ViewInventory";
+import ViewWarehouse from "../Biege/Inventory/ViewWarehouse";
 
-// ==================================================
-// ADD PRODUCT STEP COMPONENT
-// ==================================================
 
 function AddProductStep() {
-  const { tab } = useParams();
+  const { productId, tab } = useParams();
 
   let content;
 
   switch (tab) {
     case "basic":
-      content = <CreateProduct />;
+      content = <AddEditBasic />;
       break;
 
     case "pricing":
@@ -69,60 +70,15 @@ function AddProductStep() {
       break;
 
     case "media":
-      content = <ProductMedia />;
+      content = <CreateProductmedia />;
       break;
 
     case "variants":
-      content = <ProductVariants />;
+      content = <CreateProductVariant />;
       break;
 
     case "ingredients":
-      content = <ProductIngredients />;
-      break;
-
-    case "ai-tags":
-      content = <ProductAiTags />;
-      break;
-
-    default:
-      return <Navigate to="/add-product/basic" replace />;
-  }
-
-  return (
-    <ProductPageLayout>
-      {content}
-    </ProductPageLayout>
-  );
-}
-
-// ==================================================
-// EDIT PRODUCT STEP COMPONENT
-// ==================================================
-
-function EditProductStep() {
-  const { id, tab } = useParams();
-
-  let content;
-
-  switch (tab) {
-    case "basic":
-      content = <EditProduct />;
-      break;
-
-    case "pricing":
-      content = <ProductPricing />;
-      break;
-
-    case "media":
-      content = <ProductMedia />;
-      break;
-
-    case "variants":
-      content = <ProductVariants />;
-      break;
-
-    case "ingredients":
-      content = <ProductIngredients />;
+      content = <CreateProductIngredients />;
       break;
 
     case "ai-tags":
@@ -132,22 +88,59 @@ function EditProductStep() {
     default:
       return (
         <Navigate
-          to={`/edit-product/${id}/basic`}
+          to={`/add-product/${productId}/basic`}
           replace
         />
       );
   }
 
-  return (
-    <ProductPageLayout>
-      {content}
-    </ProductPageLayout>
-  );
+  return <ProductPageLayout>{content}</ProductPageLayout>;
 }
+function EditProductStep() {
+  const { id, tab } = useParams();
 
-// ==================================================
-// SIDEBAR COMPONENT
-// ==================================================
+  let content;
+
+  switch (tab) {
+    case "product":
+      content = <EditProduct />;
+      break;
+
+    case "basic":
+      content = <AddEditBasic />;
+      break;
+
+    case "pricing":
+      content = <ProductPricing />;
+      break;
+
+    case "media":
+      content = <CreateProductmedia />;
+      break;
+
+    case "variants":
+      content = <CreateProductVariant />;
+      break;
+
+    case "ingredients":
+      content = <CreateProductIngredients />;
+      break;
+
+    case "ai-tags":
+      content = <EditProductAiTags />;
+      break;
+
+    default:
+      return (
+        <Navigate
+          to={`/edit-product/${id}/product`}
+          replace
+        />
+      );
+  }
+
+  return <ProductPageLayout>{content}</ProductPageLayout>;
+}
 
 function SideBar() {
   const location = useLocation();
@@ -181,13 +174,23 @@ function SideBar() {
     pathname.startsWith("/edit-product-ingredients/") ||
     pathname.startsWith("/view-product-ingredients/") ||
     pathname === "/product-pricing" ||
-    pathname === "/product-ai-tags"
+    pathname === "/product-ai-tags";
+
+
   // Subadmin pages
   const isSubAdminPage =
     pathname === "/permissionmodule" ||
     pathname === "/view-subadmin" ||
     pathname === "/add-subadmin" ||
     pathname.startsWith("/edit-subadmin/");
+
+  // Category pages
+  const isCategoryPage = pathname === "/view-categories";
+
+  const isCollection = pathname === "/collections"
+
+  const isInventory = pathname === "/inventory"
+  const isWarehouse = pathname === "/warehouse";
 
   return (
     <div className="App dashboard-navhide-section">
@@ -220,17 +223,6 @@ function SideBar() {
                 <div className="position-sticky">
                   <ul className="nav flex-column nav-pills">
 
-                    {/* SUBADMIN */}
-                    <li className="nav-item">
-                      <Link
-                        className={`nav-link component-tabs ${isSubAdminPage ? "active" : ""
-                          }`}
-                        to="/view-subadmin"
-                      >
-                        <FontAwesomeIcon icon={faUsers} />
-                        {" "}SubAdmin Details
-                      </Link>
-                    </li>
 
                     {/* PRODUCT */}
                     <li className="nav-item">
@@ -241,6 +233,58 @@ function SideBar() {
                       >
                         <FontAwesomeIcon icon={faUsers} />
                         {" "}Product Details
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+                        className={`nav-link component-tabs ${isCategoryPage ? "active" : ""
+                          }`}
+                        to="/view-categories"
+                      >
+                        <FontAwesomeIcon icon={faUsers} />
+                        {" "}Categories Details
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+
+                        className={`nav-link component-tabs ${isCollection ? "active" : ""
+                          }`}
+                        to="/collections"
+
+                      >
+                        Collections
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+
+                        className={`nav-link component-tabs ${isInventory ? "active" : ""
+                          }`}
+                        to="/inventory"
+
+                      >
+                        Inventory
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+                        className={`nav-link component-tabs ${isWarehouse ? "active" : ""
+                          }`}
+                        to="/warehouse"
+                      >
+                        Warehouse
+                      </Link>
+                    </li>
+                    {/* SUBADMIN */}
+                    <li className="nav-item">
+                      <Link
+                        className={`nav-link component-tabs ${isSubAdminPage ? "active" : ""
+                          }`}
+                        to="/view-subadmin"
+                      >
+                        <FontAwesomeIcon icon={faUsers} />
+                        {" "}SubAdmin Details
                       </Link>
                     </li>
 
@@ -268,9 +312,6 @@ function SideBar() {
 
             <Routes>
 
-              {/* ==========================================
-                  SUBADMIN ROUTES
-              ========================================== */}
 
               <Route
                 path="/add-subadmin"
@@ -286,19 +327,9 @@ function SideBar() {
                 path="/edit-subadmin/:id"
                 element={<EditSubAdmin />}
               />
-
-
-              {/* ==========================================
-                  PRODUCT LIST ROUTES
-              ========================================== */}
-
               <Route
                 path="/view-product"
-                element={
-                  <ProductPageLayout activeStep={-1}>
-                    <ViewProduct />
-                  </ProductPageLayout>
-                }
+                element={<ViewProduct />}
               />
 
               <Route
@@ -309,34 +340,28 @@ function SideBar() {
                   </ProductPageLayout>
                 }
               />
-              {/* PRICING MODULE */}
+
               <Route
                 path="/product-pricing"
                 element={
-                  <ProductPageLayout activeStep={1}>
+                  <ProductPageLayout activeStep={2}>
                     <ProductPricing />
                   </ProductPageLayout>
                 }
               />
 
-              {/* AI TAGS MODULE */}
               <Route
                 path="/product-ai-tags"
                 element={
-                  <ProductPageLayout activeStep={5}>
+                  <ProductPageLayout activeStep={6}>
                     <ProductAiTags />
                   </ProductPageLayout>
                 }
               />
-
-              {/* ==========================================
-                  BASIC PRODUCT CRUD
-              ========================================== */}
-
               <Route
                 path="/add-product-basic"
                 element={
-                  <ProductPageLayout activeStep={0}>
+                  <ProductPageLayout activeStep={1}>
                     <AddEditBasic />
                   </ProductPageLayout>
                 }
@@ -345,49 +370,33 @@ function SideBar() {
               <Route
                 path="/edit-product-basic/:id"
                 element={
-                  <ProductPageLayout activeStep={0}>
+                  <ProductPageLayout activeStep={1}>
                     <AddEditBasic />
                   </ProductPageLayout>
                 }
               />
-
-
-              {/* ==========================================
-                  ADD PRODUCT REDIRECT
-              ========================================== */}
-
               <Route
                 path="/create-product"
                 element={
-                  <Navigate to="/add-product/basic" replace />
+                  <ProductPageLayout activeStep={0}>
+                    <CreateProduct />
+                  </ProductPageLayout>
                 }
               />
-
-
-              {/* ==========================================
-                  ADD PRODUCT WIZARD
-              ========================================== */}
 
               <Route
                 path="/add-product"
-                element={
-                  <Navigate to="/add-product/basic" replace />
-                }
+                element={<Navigate to="/create-product" replace />}
               />
 
               <Route
-                path="/add-product/:tab"
+                path="/add-product/:productId/:tab"
                 element={<AddProductStep />}
               />
 
-
-              {/* ==========================================
-                  EDIT PRODUCT WIZARD
-              ========================================== */}
-
               <Route
                 path="/edit-product/:id"
-                element={<Navigate to="basic" replace />}
+                element={<Navigate to="product" replace />}
               />
 
               <Route
@@ -395,15 +404,10 @@ function SideBar() {
                 element={<EditProductStep />}
               />
 
-
-              {/* ==========================================
-                  MEDIA MODULE ROUTES
-              ========================================== */}
-
               <Route
                 path="/product-media"
                 element={
-                  <ProductPageLayout activeStep={2}>
+                  <ProductPageLayout activeStep={3}>
                     <ProductMedia />
                   </ProductPageLayout>
                 }
@@ -412,7 +416,7 @@ function SideBar() {
               <Route
                 path="/view-product-media/:id"
                 element={
-                  <ProductPageLayout activeStep={2}>
+                  <ProductPageLayout activeStep={3}>
                     <ViewProductMedia />
                   </ProductPageLayout>
                 }
@@ -421,7 +425,7 @@ function SideBar() {
               <Route
                 path="/create-product-media"
                 element={
-                  <ProductPageLayout activeStep={2}>
+                  <ProductPageLayout activeStep={3}>
                     <CreateProductmedia />
                   </ProductPageLayout>
                 }
@@ -430,21 +434,17 @@ function SideBar() {
               <Route
                 path="/edit-product-media/:id"
                 element={
-                  <ProductPageLayout activeStep={2}>
+                  <ProductPageLayout activeStep={3}>
                     <EditProductMedia />
                   </ProductPageLayout>
                 }
               />
 
 
-              {/* ==========================================
-                  VARIANTS MODULE ROUTES
-              ========================================== */}
-
               <Route
                 path="/product-variants"
                 element={
-                  <ProductPageLayout activeStep={3}>
+                  <ProductPageLayout activeStep={4}>
                     <ProductVariants />
                   </ProductPageLayout>
                 }
@@ -453,7 +453,7 @@ function SideBar() {
               <Route
                 path="/view-product-variant/:id"
                 element={
-                  <ProductPageLayout activeStep={3}>
+                  <ProductPageLayout activeStep={4}>
                     <ViewProductVariant />
                   </ProductPageLayout>
                 }
@@ -462,7 +462,7 @@ function SideBar() {
               <Route
                 path="/create-product-variant"
                 element={
-                  <ProductPageLayout activeStep={3}>
+                  <ProductPageLayout activeStep={4}>
                     <CreateProductVariant />
                   </ProductPageLayout>
                 }
@@ -471,21 +471,16 @@ function SideBar() {
               <Route
                 path="/edit-product-variant/:id"
                 element={
-                  <ProductPageLayout activeStep={3}>
+                  <ProductPageLayout activeStep={4}>
                     <EditProductVariant />
                   </ProductPageLayout>
                 }
               />
 
-
-              {/* ==========================================
-                  INGREDIENTS MODULE ROUTES
-              ========================================== */}
-
               <Route
                 path="/product-ingredients"
                 element={
-                  <ProductPageLayout activeStep={4}>
+                  <ProductPageLayout activeStep={5}>
                     <ProductIngredients />
                   </ProductPageLayout>
                 }
@@ -494,7 +489,7 @@ function SideBar() {
               <Route
                 path="/create-product-ingredients"
                 element={
-                  <ProductPageLayout activeStep={4}>
+                  <ProductPageLayout activeStep={5}>
                     <CreateProductIngredients />
                   </ProductPageLayout>
                 }
@@ -503,7 +498,7 @@ function SideBar() {
               <Route
                 path="/edit-product-ingredients/:id"
                 element={
-                  <ProductPageLayout activeStep={4}>
+                  <ProductPageLayout activeStep={5}>
                     <EditProductIngredients />
                   </ProductPageLayout>
                 }
@@ -512,12 +507,24 @@ function SideBar() {
               <Route
                 path="/view-product-ingredients/:id"
                 element={
-                  <ProductPageLayout activeStep={4}>
+                  <ProductPageLayout activeStep={5}>
                     <ViewProductIngredients />
                   </ProductPageLayout>
                 }
               />
-
+              <Route path="/view-categories" element={<ViewCategories />} />
+              <Route
+                path="/collections"
+                element={<ViewCollections />}
+              />
+              <Route
+                path="/inventory"
+                element={<ViewInventory />}
+              />
+              <Route
+                path="/warehouse"
+                element={<ViewWarehouse />}
+              />
             </Routes>
 
           </main>

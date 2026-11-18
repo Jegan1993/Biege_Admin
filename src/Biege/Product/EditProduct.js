@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
@@ -19,17 +25,66 @@ function EditProduct() {
   const { id } = useParams();
 
   const [formData, setFormData] = useState(initialValues);
+  const [categories, setCategories] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
 
-  // Get product details by ID
+  // GET ACTIVE CATEGORIES
+  const getCategories = useCallback(async () => {
+    try {
+      setCategoryLoading(true);
 
+      const response = await makeApiRequest({
+        url: "get-categories?status=ACTIVE&limit=500&page=1",
+        method: "GET",
+      });
+
+      if (response?.status) {
+        const categoryData = Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        setCategories(categoryData);
+
+        return categoryData;
+      }
+
+      setCategories([]);
+
+      toast.error(
+        response?.message || "Failed to fetch categories"
+      );
+
+      return [];
+    } catch (error) {
+      console.error("Get Categories Error:", error);
+
+      setCategories([]);
+
+      toast.error(
+        error.response?.data?.message ||
+        "Unable to load categories"
+      );
+
+      return [];
+    } finally {
+      setCategoryLoading(false);
+    }
+  }, []);
+
+  // GET PRODUCT DETAILS BY ID
   const getProductById = useCallback(async () => {
     try {
       setFetchLoading(true);
+
+      // Load categories before setting the selected category
+      const activeCategories = await getCategories();
 
       const response = await makeApiRequest({
         url: `/getproduct/${id}`,
@@ -37,35 +92,75 @@ function EditProduct() {
       });
 
       if (!response?.status) {
-        toast.error(response?.message || "Failed to fetch product");
+        toast.error(
+          response?.message || "Failed to fetch product"
+        );
         return;
       }
 
-      // Supports either { data: product } or { data: [products] }
+      // Supports different response structures
+      const product =
+        response?.data?.data ||
+        response?.data?.product ||
+        response?.data ||
+        response?.product;
 
-      const product = Array.isArray(response.data)
-        ? response.data[0]
-        : response.data || response.product;
+      const productData = Array.isArray(product)
+        ? product[0]
+        : product;
 
-      if (!product) {
+      if (!productData) {
         toast.error("Product details not found");
         return;
       }
 
+      // Handle populated category object or plain ObjectId
+      const categoryId =
+        typeof productData.category === "object" &&
+          productData.category !== null
+          ? productData.category._id
+          : productData.category;
+
+      // Preserve current category if it is not in active categories
+      // This helps edit products whose existing category is inactive.
+      if (
+        categoryId &&
+        !activeCategories.some(
+          (category) =>
+            String(category._id) === String(categoryId)
+        )
+      ) {
+        const currentCategory =
+          typeof productData.category === "object" &&
+            productData.category !== null
+            ? productData.category
+            : null;
+
+        setCategories((prev) => [
+          ...prev,
+          {
+            _id: categoryId,
+            name:
+              currentCategory?.name ||
+              "Current category (inactive or unavailable)",
+          },
+        ]);
+      }
+
       setFormData({
-        name: product.name || "",
-        image: product.image || "",
-        sku: product.sku || "",
-        category: product.category || "",
-        type: product.type || "",
-        price: product.price ?? "",
-        stock: product.stock ?? "",
-        status: product.status || "DRAFT",
+        name: productData.name || "",
+        image: productData.image || "",
+        sku: productData.sku || "",
+        category: categoryId ? String(categoryId) : "",
+        type: productData.type || "",
+        price: productData.price ?? "",
+        stock: productData.stock ?? "",
+        status: productData.status || "DRAFT",
       });
 
-      setPreviewImage(product.image || "");
+      setPreviewImage(productData.image || "");
     } catch (error) {
-      console.error("Get product error:", error);
+      console.error("Get Product Error:", error);
 
       toast.error(
         error.response?.data?.message ||
@@ -74,7 +169,7 @@ function EditProduct() {
     } finally {
       setFetchLoading(false);
     }
-  }, [id]);
+  }, [id, getCategories]);
 
   useEffect(() => {
     if (!id) {
@@ -86,8 +181,20 @@ function EditProduct() {
     getProductById();
   }, [id, getProductById]);
 
-  // Handle input changes
+  // IMAGE PREVIEW AND CLEANUP
+  useEffect(() => {
+    if (!imageFile) return;
 
+    const previewUrl = URL.createObjectURL(imageFile);
+
+    setPreviewImage(previewUrl);
+
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [imageFile]);
+
+  // HANDLE INPUT CHANGES
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -102,8 +209,7 @@ function EditProduct() {
     }));
   };
 
-  // Handle image file selection
-
+  // HANDLE IMAGE FILE SELECTION
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
 
@@ -111,18 +217,19 @@ function EditProduct() {
 
     if (!file.type.startsWith("image/")) {
       toast.error("Please select a valid image");
+
       e.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size should not exceed 5MB");
+
       e.target.value = "";
       return;
     }
 
     setImageFile(file);
-    setPreviewImage(URL.createObjectURL(file));
 
     setErrors((prev) => ({
       ...prev,
@@ -130,8 +237,7 @@ function EditProduct() {
     }));
   };
 
-  // Form validation
-
+  // FORM VALIDATION
   const validateForm = () => {
     const newErrors = {};
 
@@ -143,7 +249,7 @@ function EditProduct() {
       newErrors.sku = "SKU is required";
     }
 
-    if (!formData.category.trim()) {
+    if (!formData.category) {
       newErrors.category = "Category is required";
     }
 
@@ -176,8 +282,7 @@ function EditProduct() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Update product
-
+  // UPDATE PRODUCT
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -194,7 +299,7 @@ function EditProduct() {
       const payload = {
         name: formData.name.trim(),
         sku: formData.sku.trim().toUpperCase(),
-        category: formData.category.trim(),
+        category: formData.category,
         type: formData.type,
         price: Number(formData.price),
         stock: Number(formData.stock),
@@ -218,7 +323,7 @@ function EditProduct() {
           header: "image",
         });
       } else {
-        // Image not changed: send existing image URL
+        // Image not changed: retain existing image URL
         response = await makeApiRequest({
           url: `/updateproduct/${id}`,
           method: "PUT",
@@ -230,14 +335,18 @@ function EditProduct() {
       }
 
       if (response?.status) {
-        toast.success(response.message || "Product updated successfully");
+        toast.success(
+          response.message || "Product updated successfully"
+        );
 
         navigate("/view-product");
       } else {
-        toast.error(response?.message || "Failed to update product");
+        toast.error(
+          response?.message || "Failed to update product"
+        );
       }
     } catch (error) {
-      console.error("Update product error:", error);
+      console.error("Update Product Error:", error);
 
       toast.error(
         error.response?.data?.message ||
@@ -248,11 +357,15 @@ function EditProduct() {
     }
   };
 
+  // LOADING SCREEN
   if (fetchLoading) {
     return (
       <div className="container-fluid py-5 text-center">
         <div className="spinner-border text-primary"></div>
-        <p className="text-muted mt-2">Loading product details...</p>
+
+        <p className="text-muted mt-2">
+          Loading product details...
+        </p>
       </div>
     );
   }
@@ -263,6 +376,7 @@ function EditProduct() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h4 className="fw-bold mb-1">Edit Product</h4>
+
           <p className="text-muted mb-0">
             Update your product information
           </p>
@@ -283,6 +397,7 @@ function EditProduct() {
         <div className="card-body p-4">
           <form onSubmit={handleSubmit} noValidate>
             <div className="row g-4">
+
               {/* Product Name */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
@@ -300,7 +415,9 @@ function EditProduct() {
                 />
 
                 {errors.name && (
-                  <div className="invalid-feedback">{errors.name}</div>
+                  <div className="invalid-feedback">
+                    {errors.name}
+                  </div>
                 )}
               </div>
 
@@ -321,12 +438,13 @@ function EditProduct() {
                 />
 
                 {errors.sku && (
-                  <div className="invalid-feedback">{errors.sku}</div>
+                  <div className="invalid-feedback">
+                    {errors.sku}
+                  </div>
                 )}
               </div>
 
               {/* Product Image */}
-
               <div className="col-md-12">
                 <label className="form-label fw-semibold">
                   Product Image
@@ -335,14 +453,16 @@ function EditProduct() {
                 <input
                   type="file"
                   name="image"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
                   className={`form-control ${errors.image ? "is-invalid" : ""
                     }`}
                   onChange={handleImageChange}
                 />
 
                 {errors.image && (
-                  <div className="invalid-feedback">{errors.image}</div>
+                  <div className="invalid-feedback">
+                    {errors.image}
+                  </div>
                 )}
 
                 {previewImage && (
@@ -365,26 +485,42 @@ function EditProduct() {
                 )}
 
                 <small className="text-muted">
-                  Leave unchanged to keep the existing image. Maximum size: 5MB.
+                  Leave unchanged to keep the existing image.
+                  Maximum size: 5MB.
                 </small>
               </div>
 
               {/* Category */}
-
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   Category <span className="text-danger">*</span>
                 </label>
 
-                <input
-                  type="text"
+                <select
                   name="category"
-                  className={`form-control ${errors.category ? "is-invalid" : ""
+                  className={`form-select ${errors.category ? "is-invalid" : ""
                     }`}
-                  placeholder="Enter category"
                   value={formData.category}
                   onChange={handleChange}
-                />
+                  disabled={categoryLoading || categories.length === 0}
+                >
+                  <option value="">
+                    {categoryLoading
+                      ? "Loading categories..."
+                      : categories.length === 0
+                        ? "No categories available"
+                        : "Select category"}
+                  </option>
+
+                  {categories.map((category) => (
+                    <option
+                      key={category._id}
+                      value={category._id}
+                    >
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
 
                 {errors.category && (
                   <div className="invalid-feedback">
@@ -393,8 +529,7 @@ function EditProduct() {
                 )}
               </div>
 
-              {/* Type */}
-              
+              {/* Product Type */}
               <div className="col-md-6">
                 <label className="form-label fw-semibold">
                   Product Type <span className="text-danger">*</span>
@@ -413,7 +548,9 @@ function EditProduct() {
                 </select>
 
                 {errors.type && (
-                  <div className="invalid-feedback">{errors.type}</div>
+                  <div className="invalid-feedback">
+                    {errors.type}
+                  </div>
                 )}
               </div>
 
@@ -436,7 +573,9 @@ function EditProduct() {
                 />
 
                 {errors.price && (
-                  <div className="invalid-feedback">{errors.price}</div>
+                  <div className="invalid-feedback">
+                    {errors.price}
+                  </div>
                 )}
               </div>
 
@@ -459,7 +598,9 @@ function EditProduct() {
                 />
 
                 {errors.stock && (
-                  <div className="invalid-feedback">{errors.stock}</div>
+                  <div className="invalid-feedback">
+                    {errors.stock}
+                  </div>
                 )}
               </div>
 
@@ -482,11 +623,13 @@ function EditProduct() {
                 </select>
 
                 {errors.status && (
-                  <div className="invalid-feedback">{errors.status}</div>
+                  <div className="invalid-feedback">
+                    {errors.status}
+                  </div>
                 )}
               </div>
 
-              {/* Submit */}
+              {/* Submit Buttons */}
               <div className="col-12">
                 <hr />
 
@@ -503,7 +646,7 @@ function EditProduct() {
                   <button
                     type="submit"
                     className="btn btn-primary px-4"
-                    disabled={loading}
+                    disabled={loading || categoryLoading}
                   >
                     {loading ? (
                       <>
@@ -519,6 +662,7 @@ function EditProduct() {
                   </button>
                 </div>
               </div>
+
             </div>
           </form>
         </div>

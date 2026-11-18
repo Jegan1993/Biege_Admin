@@ -1,9 +1,10 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { makeApiRequest } from "../../AxiosServices/apiCall";
+import { makeApiRequest } from "../../../AxiosServices/apiCall";
 
-const AIRecommendations = ({ analysisId, productId }) => {
+const AIRecommendations = ({ productId }) => {
+  const currentProductId = String(productId || "");
   const [recommendations, setRecommendations] = useState([]);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -13,8 +14,10 @@ const AIRecommendations = ({ analysisId, productId }) => {
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
 
   // Fetch AI Recommendations
+
+
   const fetchRecommendations = useCallback(async () => {
-    if (!analysisId || !productId) {
+    if (!currentProductId) {
       setRecommendations([]);
       setAnalysisResult(null);
       return;
@@ -26,23 +29,35 @@ const AIRecommendations = ({ analysisId, productId }) => {
       setAnalysisResult(null);
 
       const response = await makeApiRequest({
-        url: `skin-ai/recommendations/${encodeURIComponent(
-          analysisId
-        )}?productId=${encodeURIComponent(productId)}`,
+        url: `skin-ai/recommendations?productId=${encodeURIComponent(
+          currentProductId
+        )}`,
         method: "GET",
       });
-      if (!response?.status) {
-        setRecommendations([]);
-        setAnalysisResult(null);
 
+      if (!response?.status) {
         toast.error(
           response?.message || "Unable to fetch recommendations"
         );
-
         return;
       }
 
       const result = response.data?.data || response.data || {};
+
+      // Verify that the response belongs to the selected product.
+      const responseProductId =
+        result.ProductId?._id ||
+        result.ProductId ||
+        result.productId?._id ||
+        result.productId;
+
+      if (
+        responseProductId &&
+        String(responseProductId) !== currentProductId
+      ) {
+        toast.error("Recommendations do not belong to this product");
+        return;
+      }
 
       setAnalysisResult(result);
 
@@ -66,14 +81,12 @@ const AIRecommendations = ({ analysisId, productId }) => {
     } finally {
       setLoading(false);
     }
-  }, [analysisId, productId]);
+  }, [currentProductId]);
+
 
   useEffect(() => {
-    if (analysisId && productId) {
-      fetchRecommendations();
-    }
-  }, [analysisId, productId, fetchRecommendations]);
-
+    fetchRecommendations();
+  }, [fetchRecommendations]);
   // Get recommended product object
   const getProduct = (item) => {
     return item?.product || item?.Product || item || {};
@@ -138,10 +151,10 @@ const AIRecommendations = ({ analysisId, productId }) => {
   };
 
   // Validate required props
-  if (!analysisId || !productId) {
+  if (!productId) {
     return (
       <div className="alert alert-warning">
-        Analysis ID and Product ID are required to show recommendations.
+        Product ID are required to show recommendations.
       </div>
     );
   }
@@ -485,13 +498,13 @@ const AIRecommendations = ({ analysisId, productId }) => {
 
                             <div className="col-md-6 mb-3">
                               <strong>Analysis ID</strong>
-                              <p className="mb-0">{analysisResult?._id || analysisId}</p>
+                              <p className="mb-0">{analysisResult?._id}</p>
                             </div>
 
                             <div className="col-md-6 mb-3">
                               <strong>Product ID</strong>
                               <p className="mb-0">
-                                {analysisResult?.ProductId || productId}
+                                {currentProductId}
                               </p>
                             </div>
 
