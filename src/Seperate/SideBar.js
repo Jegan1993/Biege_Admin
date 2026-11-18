@@ -49,6 +49,10 @@ import ProductAiTags from "../Biege/Product/ProductAiTags/ProductAiTags";
 import EditProductAiTags from "../Biege/Product/ProductAiTags/EditProductAiTags";
 // Common Product Layout
 import ProductPageLayout from "../Biege/Product/ProductPageLayout";
+import ViewCategories from "../Biege/Categories/ViewCategories";
+import ViewCollections from "../Biege/Categories/ViewCollections";
+import ViewInventory from "../Biege/Inventory/ViewInventory";
+import ViewWarehouse from "../Biege/Inventory/ViewWarehouse";
 
 
 function AddProductStep() {
@@ -172,12 +176,21 @@ function SideBar() {
     pathname === "/product-pricing" ||
     pathname === "/product-ai-tags";
 
+
   // Subadmin pages
   const isSubAdminPage =
     pathname === "/permissionmodule" ||
     pathname === "/view-subadmin" ||
     pathname === "/add-subadmin" ||
     pathname.startsWith("/edit-subadmin/");
+
+  // Category pages
+  const isCategoryPage = pathname === "/view-categories";
+
+  const isCollection = pathname === "/collections"
+
+  const isInventory = pathname === "/inventory"
+  const isWarehouse = pathname === "/warehouse";
 
   return (
     <div className="App dashboard-navhide-section">
@@ -210,17 +223,6 @@ function SideBar() {
                 <div className="position-sticky">
                   <ul className="nav flex-column nav-pills">
 
-                    {/* SUBADMIN */}
-                    <li className="nav-item">
-                      <Link
-                        className={`nav-link component-tabs ${isSubAdminPage ? "active" : ""
-                          }`}
-                        to="/view-subadmin"
-                      >
-                        <FontAwesomeIcon icon={faUsers} />
-                        {" "}SubAdmin Details
-                      </Link>
-                    </li>
 
                     {/* PRODUCT */}
                     <li className="nav-item">
@@ -231,6 +233,58 @@ function SideBar() {
                       >
                         <FontAwesomeIcon icon={faUsers} />
                         {" "}Product Details
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+                        className={`nav-link component-tabs ${isCategoryPage ? "active" : ""
+                          }`}
+                        to="/view-categories"
+                      >
+                        <FontAwesomeIcon icon={faUsers} />
+                        {" "}Categories Details
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+
+                        className={`nav-link component-tabs ${isCollection ? "active" : ""
+                          }`}
+                        to="/collections"
+
+                      >
+                        Collections
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+
+                        className={`nav-link component-tabs ${isInventory ? "active" : ""
+                          }`}
+                        to="/inventory"
+
+                      >
+                        Inventory
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+                        className={`nav-link component-tabs ${isWarehouse ? "active" : ""
+                          }`}
+                        to="/warehouse"
+                      >
+                        Warehouse
+                      </Link>
+                    </li>
+                    {/* SUBADMIN */}
+                    <li className="nav-item">
+                      <Link
+                        className={`nav-link component-tabs ${isSubAdminPage ? "active" : ""
+                          }`}
+                        to="/view-subadmin"
+                      >
+                        <FontAwesomeIcon icon={faUsers} />
+                        {" "}SubAdmin Details
                       </Link>
                     </li>
 
@@ -258,9 +312,6 @@ function SideBar() {
 
             <Routes>
 
-              {/* ==========================================
-                  SUBADMIN ROUTES
-              ========================================== */}
 
               <Route
                 path="/add-subadmin"
@@ -276,12 +327,6 @@ function SideBar() {
                 path="/edit-subadmin/:id"
                 element={<EditSubAdmin />}
               />
-
-
-              {/* ==========================================
-                  PRODUCT LIST ROUTES
-              ========================================== */}
-
               <Route
                 path="/view-product"
                 element={<ViewProduct />}
@@ -313,12 +358,6 @@ function SideBar() {
                   </ProductPageLayout>
                 }
               />
-
-
-              {/* ==========================================
-                  BASIC PRODUCT CRUD
-              ========================================== */}
-
               <Route
                 path="/add-product-basic"
                 element={
@@ -336,12 +375,6 @@ function SideBar() {
                   </ProductPageLayout>
                 }
               />
-
-
-              {/* ==========================================
-                  ADD PRODUCT WIZARD
-              ========================================== */}
-
               <Route
                 path="/create-product"
                 element={
@@ -361,11 +394,6 @@ function SideBar() {
                 element={<AddProductStep />}
               />
 
-
-              {/* ==========================================
-                  EDIT PRODUCT WIZARD
-              ========================================== */}
-
               <Route
                 path="/edit-product/:id"
                 element={<Navigate to="product" replace />}
@@ -375,11 +403,6 @@ function SideBar() {
                 path="/edit-product/:id/:tab"
                 element={<EditProductStep />}
               />
-
-
-              {/* ==========================================
-                  MEDIA MODULE ROUTES
-              ========================================== */}
 
               <Route
                 path="/product-media"
@@ -418,10 +441,6 @@ function SideBar() {
               />
 
 
-              {/* ==========================================
-                  VARIANTS MODULE ROUTES
-              ========================================== */}
-
               <Route
                 path="/product-variants"
                 element={
@@ -458,11 +477,6 @@ function SideBar() {
                 }
               />
 
-
-              {/* ==========================================
-                  INGREDIENTS MODULE ROUTES
-              ========================================== */}
-
               <Route
                 path="/product-ingredients"
                 element={
@@ -498,7 +512,19 @@ function SideBar() {
                   </ProductPageLayout>
                 }
               />
-
+              <Route path="/view-categories" element={<ViewCategories />} />
+              <Route
+                path="/collections"
+                element={<ViewCollections />}
+              />
+              <Route
+                path="/inventory"
+                element={<ViewInventory />}
+              />
+              <Route
+                path="/warehouse"
+                element={<ViewWarehouse />}
+              />
             </Routes>
 
           </main>
