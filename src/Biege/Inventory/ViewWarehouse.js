@@ -241,7 +241,7 @@ function ViewWarehouse() {
   // DATATABLE COLUMNS
   const columns = [
     {
-      name: "#",
+      name: "S.No",
       width: "65px",
       cell: (row, index) => (
         <span>{(page - 1) * limit + index + 1}</span>
@@ -372,7 +372,7 @@ function ViewWarehouse() {
           >
             Edit
           </button>
-
+{/* 
           <button
             type="button"
             onClick={() => handleDelete(row._id)}
@@ -387,7 +387,7 @@ function ViewWarehouse() {
             }}
           >
             Delete
-          </button>
+          </button> */}
         </div>
       ),
       ignoreRowClick: true,
@@ -471,7 +471,7 @@ function ViewWarehouse() {
           </p>
         </div>
 
-        {!showForm && (
+        {!showForm && warehouses.length === 0 && (
           <button
             type="button"
             onClick={handleCreate}

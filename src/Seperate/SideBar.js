@@ -8,14 +8,9 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-
 import { GrClose } from "react-icons/gr";
 import { IoMdLogOut } from "react-icons/io";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUsers } from "@fortawesome/free-solid-svg-icons";
-
 import "../Assets/css/Dashboard.css";
-
 // Permission Components
 import AddSubadmin from "../Biege/ModulePermission/AddSubadmin";
 import ViewSubAdmin from "../Biege/ModulePermission/ViewSubAdmin";
@@ -231,7 +226,6 @@ function SideBar() {
                           }`}
                         to="/view-product"
                       >
-                        <FontAwesomeIcon icon={faUsers} />
                         {" "}Product Details
                       </Link>
                     </li>
@@ -241,7 +235,6 @@ function SideBar() {
                           }`}
                         to="/view-categories"
                       >
-                        <FontAwesomeIcon icon={faUsers} />
                         {" "}Categories Details
                       </Link>
                     </li>
@@ -283,7 +276,6 @@ function SideBar() {
                           }`}
                         to="/view-subadmin"
                       >
-                        <FontAwesomeIcon icon={faUsers} />
                         {" "}SubAdmin Details
                       </Link>
                     </li>
