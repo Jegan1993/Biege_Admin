@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
 import StockAdjustmentModal from "./StockAdjustmentModal";
 import StockAdjustmentLog from "./StockAdjustmentLog";
+import { useNavigate } from "react-router-dom";
 const initialReceiveValues = {
   productId: "",
   variantId: "",
@@ -21,7 +22,6 @@ const initialReceiveValues = {
   expiryDate: "",
   notes: "",
 };
-
 const tableCustomStyles = {
   table: {
     style: { backgroundColor: "#ffffff" },
@@ -107,6 +107,7 @@ function ViewInventory() {
   const [editLowStockThreshold, setEditLowStockThreshold] = useState("");
 
 
+  const navigate = useNavigate()
 
 
 
@@ -924,6 +925,15 @@ function ViewInventory() {
             >
               <i className="fa fa-history me-2"></i>
               Adjustment Log
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-warning"
+              onClick={() => navigate("/expiry-management")}
+            >
+              <i className="fa fa-calendar-times me-2"></i>
+              Expiry Management
             </button>
           </div>
 

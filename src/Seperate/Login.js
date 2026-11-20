@@ -69,7 +69,7 @@ function Login() {
           toast.success(response.message);
           setTimeout(() => {
             {
-              gettoken ? navigate("/view-subadmin") : navigate("/");
+              gettoken ? navigate("/dashboard") : navigate("/");
             }
           }, 1000);
         } else {

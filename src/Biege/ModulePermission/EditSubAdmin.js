@@ -6,7 +6,7 @@ import * as Yup from "yup";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
 import { toast } from "react-toastify";
 
-// Initial form values
+// Initial values
 const getEmptyValues = () => ({
   name: "",
   email: "",
@@ -14,40 +14,73 @@ const getEmptyValues = () => ({
   permissions: [],
 });
 
-// Convert API module response into an array of strings
+// Handle Axios response and directly returned backend response
+const getResponseBody = (response) => {
+  if (response?.data?.status !== undefined) {
+    return response.data;
+  }
+
+  return response;
+};
+
+// Extract only modules returned by backend
 const normalizeModules = (response) => {
-  const result = response?.data ?? response;
-  const moduleData = result?.data ?? result;
+  const result = getResponseBody(response);
 
-  const items = Array.isArray(moduleData)
-    ? moduleData
-    : [moduleData];
+  if (result?.status !== true || !Array.isArray(result.data)) {
+    console.error("Invalid modules response:", response);
+    return [];
+  }
 
-  const normalizedModules = items.flatMap((item) => {
+  const modules = result.data.flatMap((item) => {
     if (typeof item === "string") {
       return [item];
     }
 
-    if (
-      item &&
-      typeof item === "object" &&
-      !Array.isArray(item)
-    ) {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
       return Object.values(item).filter(
-        (value) => typeof value === "string"
+        (value) =>
+          typeof value === "string" &&
+          value.trim() !== ""
       );
     }
 
     return [];
   });
 
-  return [
-    ...new Set(
-      normalizedModules.filter(
-        (module) => module.trim() !== ""
-      )
-    ),
-  ];
+  return [...new Set(modules)];
+};
+
+// Extract admin object from backend response
+const normalizeAdmin = (response) => {
+  const result = getResponseBody(response);
+
+  if (
+    !result ||
+    result.status === false ||
+    result.success === false
+  ) {
+    throw new Error(
+      result?.message || "Unable to fetch sub-admin details."
+    );
+  }
+
+  const admin =
+    result.admin ??
+    result.data?.admin ??
+    result.data ??
+    result;
+
+  if (
+    !admin ||
+    typeof admin !== "object" ||
+    Array.isArray(admin) ||
+    !admin._id
+  ) {
+    throw new Error("Sub-admin details not found.");
+  }
+
+  return admin;
 };
 
 // Validation
@@ -82,13 +115,12 @@ const validationSchema = Yup.object({
       (permissions) =>
         Array.isArray(permissions) &&
         permissions.some(
-          (permission) =>
-            permission.view || permission.edit
+          (permission) => permission.view || permission.edit
         )
     ),
 });
 
-// Map existing admin data into Formik values
+// Map existing admin permissions to backend modules
 const mapAdminToForm = (admin, modules) => {
   const existingPermissions = Array.isArray(admin.permissions)
     ? admin.permissions
@@ -99,8 +131,8 @@ const mapAdminToForm = (admin, modules) => {
     email: admin.email || "",
     status: admin.status || "ACTIVE",
 
-    // Create one permission entry for every backend module
     permissions: modules.map((module) => {
+
       const savedPermission = existingPermissions.find(
         (permission) => permission.module === module
       );
@@ -121,16 +153,15 @@ function EditSubAdmin() {
   const location = useLocation();
   const { adminId } = useParams();
 
-  const [initialValues, setInitialValues] = useState(
-    getEmptyValues
-  );
-
+  const [initialValues, setInitialValues] = useState(getEmptyValues);
   const [modules, setModules] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState("");
 
-  // Fetch modules and selected sub-admin
+  console.log('initialValues--------------', initialValues)
+
+  // Fetch modules and admin details
   useEffect(() => {
     let cancelled = false;
 
@@ -145,13 +176,17 @@ function EditSubAdmin() {
       setPageError("");
 
       try {
-        // 1. Fetch modules
+        // 1. Fetch modules from backend
         const moduleResponse = await makeApiRequest({
           url: "/get-modules",
           method: "GET",
         });
 
+        console.log("GET MODULES RESPONSE:", moduleResponse);
+
         const moduleList = normalizeModules(moduleResponse);
+
+        console.log("NORMALIZED MODULES:", moduleList);
 
         if (!moduleList.length) {
           throw new Error(
@@ -163,10 +198,10 @@ function EditSubAdmin() {
 
         setModules(moduleList);
 
-        // 2. Get selected admin
-        let admin;
-
+        // 2. Fetch selected admin
         const selectedAdmin = location.state?.admin;
+
+        let admin;
 
         if (
           selectedAdmin &&
@@ -174,35 +209,24 @@ function EditSubAdmin() {
         ) {
           admin = selectedAdmin;
         } else {
-          const response = await makeApiRequest({
+          const adminResponse = await makeApiRequest({
             url: `/get-admin/${adminId}`,
             method: "GET",
           });
 
-          const body = response?.data ?? response;
+          console.log("GET ADMIN RESPONSE:", adminResponse);
 
-          admin = body?.admin ?? body?.data ?? body;
-
-          if (
-            body?.status === false ||
-            !admin ||
-            typeof admin !== "object" ||
-            Array.isArray(admin) ||
-            !admin._id
-          ) {
-            throw new Error(
-              body?.message ||
-              "Sub-admin details not found."
-            );
-          }
+          admin = normalizeAdmin(adminResponse);
         }
 
         if (cancelled) return;
 
-        // 3. Map existing permissions to dynamic modules
-        setInitialValues(
-          mapAdminToForm(admin, moduleList)
-        );
+        // 3. Map admin details and saved permissions
+        const formValues = mapAdminToForm(admin, moduleList);
+
+        console.log("EDIT FORM VALUES:", formValues);
+
+        setInitialValues(formValues);
       } catch (error) {
         if (!cancelled) {
           console.error("Load Edit Subadmin Error:", error);
@@ -235,14 +259,14 @@ function EditSubAdmin() {
 
     onSubmit: async (values) => {
       if (!adminId) {
-        setPageError("Invalid sub-admin ID.");
+        toast.error("Invalid sub-admin ID.");
         return;
       }
 
-      try {
-        setSaving(true);
-        setPageError("");
+      setSaving(true);
+      setPageError("");
 
+      try {
         // Send only selected permissions
         const payload = {
           name: values.name.trim(),
@@ -256,12 +280,12 @@ function EditSubAdmin() {
             )
             .map((permission) => ({
               module: permission.module,
-              view: Boolean(
-                permission.view || permission.edit
-              ),
+              view: Boolean(permission.view || permission.edit),
               edit: Boolean(permission.edit),
             })),
         };
+
+        console.log("UPDATE SUBADMIN PAYLOAD:", payload);
 
         const response = await makeApiRequest({
           url: `/update-admin/${adminId}`,
@@ -269,9 +293,12 @@ function EditSubAdmin() {
           data: payload,
         });
 
-        const result = response?.data ?? response;
+        const result = getResponseBody(response);
 
-        if (result?.status === false) {
+        if (
+          result?.status === false ||
+          result?.success === false
+        ) {
           throw new Error(
             result.message || "Unable to update sub-admin."
           );
@@ -285,8 +312,7 @@ function EditSubAdmin() {
           replace: true,
           state: {
             success:
-              result?.message ||
-              "Sub-admin updated successfully.",
+              result?.message || "Sub-admin updated successfully.",
           },
         });
       } catch (error) {
@@ -305,12 +331,8 @@ function EditSubAdmin() {
     },
   });
 
-  // Handle module permission changes - same logic as AddSubadmin
-  const handlePermissionChange = (
-    module,
-    type,
-    checked
-  ) => {
+  // Handle View/Edit permission changes
+  const handlePermissionChange = (module, type, checked) => {
     const permissions = [...formik.values.permissions];
 
     const existingIndex = permissions.findIndex(
@@ -320,27 +342,26 @@ function EditSubAdmin() {
     if (existingIndex === -1) {
       permissions.push({
         module,
-        view:
-          type === "view"
-            ? checked
-            : type === "edit" && checked,
+        view: type === "edit" ? checked : checked,
         edit: type === "edit" ? checked : false,
       });
     } else {
-      permissions[existingIndex] = {
+      const updatedPermission = {
         ...permissions[existingIndex],
         [type]: checked,
       };
 
       // Edit selected -> View automatically selected
       if (type === "edit" && checked) {
-        permissions[existingIndex].view = true;
+        updatedPermission.view = true;
       }
 
       // View unselected -> Edit automatically unselected
       if (type === "view" && !checked) {
-        permissions[existingIndex].edit = false;
+        updatedPermission.edit = false;
       }
+
+      permissions[existingIndex] = updatedPermission;
     }
 
     formik.setFieldValue("permissions", permissions);
@@ -360,13 +381,8 @@ function EditSubAdmin() {
   if (initialLoading) {
     return (
       <div className="container-fluid py-5 text-center">
-        <div
-          className="spinner-border text-primary"
-          role="status"
-        >
-          <span className="visually-hidden">
-            Loading...
-          </span>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
         </div>
 
         <p className="text-secondary mt-3">
@@ -384,9 +400,7 @@ function EditSubAdmin() {
           {/* Header */}
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
-              <h2 className="fw-bold mb-1">
-                Edit Sub Admin
-              </h2>
+              <h2 className="fw-bold mb-1">Edit Sub Admin</h2>
 
               <p className="text-secondary mb-0">
                 Update account details and module permissions.
@@ -396,9 +410,7 @@ function EditSubAdmin() {
             <button
               type="button"
               className="btn btn-outline-secondary"
-              onClick={() =>
-                navigate("/view-subadmin")
-              }
+              onClick={() => navigate("/view-subadmin")}
               disabled={saving}
             >
               Back to Sub Admins
@@ -412,7 +424,6 @@ function EditSubAdmin() {
           )}
 
           <div className="card border-0 shadow-sm rounded-3">
-
             <div className="card-header bg-white border-bottom py-3 px-4">
               <h5 className="fw-semibold mb-0">
                 Account Information
@@ -420,30 +431,20 @@ function EditSubAdmin() {
             </div>
 
             <div className="card-body p-4">
-
-              <form
-                onSubmit={formik.handleSubmit}
-                noValidate
-              >
+              <form onSubmit={formik.handleSubmit} noValidate>
                 <div className="row g-4">
 
                   {/* Name */}
                   <div className="col-12 col-md-6">
-                    <label
-                      htmlFor="name"
-                      className="form-label fw-semibold"
-                    >
-                      Full Name{" "}
-                      <span className="text-danger">*</span>
+                    <label htmlFor="name" className="form-label fw-semibold">
+                      Full Name <span className="text-danger">*</span>
                     </label>
 
                     <input
                       id="name"
                       name="name"
                       type="text"
-                      className={`form-control ${fieldError("name")
-                        ? "is-invalid"
-                        : ""
+                      className={`form-control ${fieldError("name") ? "is-invalid" : ""
                         }`}
                       placeholder="Enter full name"
                       maxLength={50}
@@ -462,21 +463,15 @@ function EditSubAdmin() {
 
                   {/* Email */}
                   <div className="col-12 col-md-6">
-                    <label
-                      htmlFor="email"
-                      className="form-label fw-semibold"
-                    >
-                      Email Address{" "}
-                      <span className="text-danger">*</span>
+                    <label htmlFor="email" className="form-label fw-semibold">
+                      Email Address <span className="text-danger">*</span>
                     </label>
 
                     <input
                       id="email"
                       name="email"
                       type="email"
-                      className={`form-control ${fieldError("email")
-                        ? "is-invalid"
-                        : ""
+                      className={`form-control ${fieldError("email") ? "is-invalid" : ""
                         }`}
                       placeholder="Enter email address"
                       maxLength={100}
@@ -495,20 +490,14 @@ function EditSubAdmin() {
 
                   {/* Status */}
                   <div className="col-12 col-md-6">
-                    <label
-                      htmlFor="status"
-                      className="form-label fw-semibold"
-                    >
-                      Account Status{" "}
-                      <span className="text-danger">*</span>
+                    <label htmlFor="status" className="form-label fw-semibold">
+                      Account Status <span className="text-danger">*</span>
                     </label>
 
                     <select
                       id="status"
                       name="status"
-                      className={`form-select ${fieldError("status")
-                        ? "is-invalid"
-                        : ""
+                      className={`form-select ${fieldError("status") ? "is-invalid" : ""
                         }`}
                       value={formik.values.status}
                       onChange={formik.handleChange}
@@ -540,24 +529,13 @@ function EditSubAdmin() {
 
                     <div className="table-responsive border rounded-3">
                       <table className="table table-hover table-bordered align-middle mb-0">
-
                         <thead className="table-light">
                           <tr>
-                            <th className="py-3">
-                              Module
-                            </th>
-
-                            <th
-                              className="text-center py-3"
-                              style={{ width: "120px" }}
-                            >
+                            <th className="py-3">Module</th>
+                            <th className="text-center py-3" style={{ width: "120px" }}>
                               View
                             </th>
-
-                            <th
-                              className="text-center py-3"
-                              style={{ width: "120px" }}
-                            >
+                            <th className="text-center py-3" style={{ width: "120px" }}>
                               Edit
                             </th>
                           </tr>
@@ -568,8 +546,7 @@ function EditSubAdmin() {
                             modules.map((module) => {
                               const permission =
                                 formik.values.permissions.find(
-                                  (item) =>
-                                    item.module === module
+                                  (item) => item.module === module
                                 );
 
                               return (
@@ -583,9 +560,7 @@ function EditSubAdmin() {
                                       type="checkbox"
                                       className="form-check-input"
                                       aria-label={`${module} view permission`}
-                                      checked={Boolean(
-                                        permission?.view
-                                      )}
+                                      checked={Boolean(permission?.view)}
                                       onChange={(event) =>
                                         handlePermissionChange(
                                           module,
@@ -602,9 +577,7 @@ function EditSubAdmin() {
                                       type="checkbox"
                                       className="form-check-input"
                                       aria-label={`${module} edit permission`}
-                                      checked={Boolean(
-                                        permission?.edit
-                                      )}
+                                      checked={Boolean(permission?.edit)}
                                       onChange={(event) =>
                                         handlePermissionChange(
                                           module,
@@ -620,16 +593,12 @@ function EditSubAdmin() {
                             })
                           ) : (
                             <tr>
-                              <td
-                                colSpan="3"
-                                className="text-center py-3"
-                              >
+                              <td colSpan="3" className="text-center py-3">
                                 No modules available.
                               </td>
                             </tr>
                           )}
                         </tbody>
-
                       </table>
                     </div>
 
@@ -643,13 +612,10 @@ function EditSubAdmin() {
                   {/* Buttons */}
                   <div className="col-12">
                     <div className="d-flex justify-content-end flex-wrap gap-2 pt-2">
-
                       <button
                         type="button"
                         className="btn btn-light border px-4"
-                        onClick={() =>
-                          navigate("/view-subadmin")
-                        }
+                        onClick={() => navigate("/view-subadmin")}
                         disabled={saving}
                       >
                         Cancel
@@ -669,13 +635,11 @@ function EditSubAdmin() {
                           "Update Sub Admin"
                         )}
                       </button>
-
                     </div>
                   </div>
 
                 </div>
               </form>
-
             </div>
           </div>
         </div>
