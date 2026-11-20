@@ -169,7 +169,6 @@ function ViewCategories() {
     }
   };
 
-  // ================= RESET FORM =================
 
   const resetForm = () => {
     setFormData({ ...initialFormData });
@@ -180,14 +179,12 @@ function ViewCategories() {
     setShowForm(false);
   };
 
-  // ================= ADD CATEGORY =================
 
   const handleAddCategory = () => {
     resetForm();
     setShowForm(true);
   };
 
-  // ================= ADD CHILD CATEGORY =================
 
   const handleAddChild = (category) => {
     resetForm();
@@ -200,7 +197,6 @@ function ViewCategories() {
     setShowForm(true);
   };
 
-  // ================= VALIDATE FORM =================
 
   const validateForm = async () => {
     try {
@@ -233,7 +229,6 @@ function ViewCategories() {
     }
   };
 
-  // ================= SUBMIT CATEGORY =================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -292,7 +287,6 @@ function ViewCategories() {
     }
   };
 
-  // ================= EDIT CATEGORY =================
 
   const handleEdit = (category) => {
     setErrors({});
@@ -315,7 +309,6 @@ function ViewCategories() {
     setShowForm(true);
   };
 
-  // ================= DELETE CATEGORY =================
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -354,7 +347,6 @@ function ViewCategories() {
     }
   };
 
-  // ================= CATEGORY TREE =================
 
   const getParentId = (category) =>
     category?.parentCategory?._id ||
@@ -426,7 +418,6 @@ function ViewCategories() {
     ? getDescendantIds(editId)
     : new Set();
 
-  // ================= CATEGORY ROW COLORS =================
 
   const getCategoryStyle = (level) => {
     if (level === 0) {
@@ -460,7 +451,6 @@ function ViewCategories() {
     };
   };
 
-  // ================= ERROR FIELD STYLE =================
 
   const getInputStyle = (fieldName) => ({
     ...styles.input,
@@ -472,7 +462,6 @@ function ViewCategories() {
     ...(errors[fieldName] ? styles.inputError : {}),
   });
 
-  // ================= GET PARENT CATEGORY NAME =================
 
   const getParentCategoryName = (category) => {
     const parentId = getParentId(category);
@@ -492,7 +481,6 @@ function ViewCategories() {
     );
   };
 
-  // ================= DISPLAY ALL CATEGORY FIELDS =================
 
   const renderCategoryFields = (category) => (
     <div style={styles.categoryFields}>
@@ -538,7 +526,7 @@ function ViewCategories() {
         </span>
       </div>
 
-        {/* <div style={styles.categoryField}>
+      {/* <div style={styles.categoryField}>
           <span style={styles.fieldLabel}>Category Image</span>
 
           {category.image ? (
@@ -557,7 +545,6 @@ function ViewCategories() {
     </div>
   );
 
-  // ================= RENDER CHILD ROWS =================
 
   const renderChildCategory = (category, level = 1) => {
     const rowStyle = getCategoryStyle(level);
@@ -635,11 +622,9 @@ function ViewCategories() {
     );
   };
 
-  // ================= MAIN UI =================
 
   return (
     <div style={styles.page}>
-      {/* HEADER */}
 
       <div style={styles.header}>
         <div>
@@ -660,7 +645,6 @@ function ViewCategories() {
         )}
       </div>
 
-      {/* CATEGORY FORM */}
 
       {showForm && (
         <div style={styles.formContainer}>
@@ -680,7 +664,6 @@ function ViewCategories() {
 
           <form onSubmit={handleSubmit} noValidate>
             <div style={styles.formGrid}>
-              {/* CATEGORY NAME */}
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>
@@ -703,7 +686,6 @@ function ViewCategories() {
                 )}
               </div>
 
-              {/* SLUG */}
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Slug *</label>
@@ -724,7 +706,6 @@ function ViewCategories() {
                 )}
               </div>
 
-              {/* PARENT CATEGORY */}
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>
@@ -758,7 +739,6 @@ function ViewCategories() {
                 </select>
               </div>
 
-              {/* DISPLAY ORDER */}
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>
@@ -780,7 +760,6 @@ function ViewCategories() {
                 )}
               </div>
 
-              {/* STATUS */}
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Status *</label>
@@ -802,7 +781,6 @@ function ViewCategories() {
                 )}
               </div>
 
-              {/* IMAGE */}
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>
@@ -833,7 +811,6 @@ function ViewCategories() {
                 )}
               </div>
 
-              {/* DESCRIPTION */}
 
               <div
                 style={{
@@ -892,7 +869,6 @@ function ViewCategories() {
         </div>
       )}
 
-      {/* CATEGORY LIST */}
 
       {!showForm && (
         <div style={styles.listContainer}>
@@ -996,7 +972,6 @@ function ViewCategories() {
   );
 }
 
-// ================= STYLES =================
 
 const styles = {
   page: {

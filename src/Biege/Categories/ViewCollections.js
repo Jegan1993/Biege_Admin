@@ -88,7 +88,6 @@ function ViewCollections() {
     fetchProducts();
   }, []);
 
-  // Fetch collections
   const fetchCollections = async () => {
     try {
       setLoading(true);
@@ -112,7 +111,6 @@ function ViewCollections() {
     }
   };
 
-  // Fetch active products
   const fetchProducts = async () => {
     try {
       const response = await makeApiRequest({
@@ -139,7 +137,6 @@ function ViewCollections() {
     }
   };
 
-  // Handle normal inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -154,7 +151,6 @@ function ViewCollections() {
     }));
   };
 
-  // Handle image file
   const handleImageChange = (e) => {
     const file = e.target.files?.[0] || null;
 
@@ -169,7 +165,6 @@ function ViewCollections() {
     }));
   };
 
-  // Handle product selection
   const handleProductSelect = (productId) => {
     const id = String(productId);
 
@@ -194,7 +189,6 @@ function ViewCollections() {
     }));
   };
 
-  // Validate form
   const validateForm = async () => {
     try {
       await collectionSchema.validate(
@@ -221,7 +215,6 @@ function ViewCollections() {
     }
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData(initialValues);
     setExistingImage("");
@@ -230,7 +223,6 @@ function ViewCollections() {
     setShowForm(false);
   };
 
-  // Create form
   const handleCreate = () => {
     setFormData(initialValues);
     setExistingImage("");
@@ -239,7 +231,6 @@ function ViewCollections() {
     setShowForm(true);
   };
 
-  // Edit collection
   const handleEdit = async (id) => {
     try {
       const response = await makeApiRequest({
@@ -279,7 +270,6 @@ function ViewCollections() {
     }
   };
 
-  // Submit create/update
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -345,7 +335,6 @@ function ViewCollections() {
     }
   };
 
-  // Delete collection
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this collection?")) {
       return;
@@ -370,7 +359,6 @@ function ViewCollections() {
     }
   };
 
-  // DataTable columns
   const columns = useMemo(
     () => [
       {
@@ -513,7 +501,6 @@ function ViewCollections() {
     []
   );
 
-  // Search collections
   const filteredCollections = useMemo(() => {
     const search = searchText.trim().toLowerCase();
 

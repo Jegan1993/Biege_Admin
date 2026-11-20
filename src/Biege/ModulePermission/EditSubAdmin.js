@@ -6,7 +6,6 @@ import * as Yup from "yup";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
 import { toast } from "react-toastify";
 
-// Initial values
 const getEmptyValues = () => ({
   name: "",
   email: "",
@@ -14,7 +13,6 @@ const getEmptyValues = () => ({
   permissions: [],
 });
 
-// Handle Axios response and directly returned backend response
 const getResponseBody = (response) => {
   if (response?.data?.status !== undefined) {
     return response.data;
@@ -23,7 +21,6 @@ const getResponseBody = (response) => {
   return response;
 };
 
-// Extract only modules returned by backend
 const normalizeModules = (response) => {
   const result = getResponseBody(response);
 
@@ -51,7 +48,6 @@ const normalizeModules = (response) => {
   return [...new Set(modules)];
 };
 
-// Extract admin object from backend response
 const normalizeAdmin = (response) => {
   const result = getResponseBody(response);
 
@@ -120,7 +116,6 @@ const validationSchema = Yup.object({
     ),
 });
 
-// Map existing admin permissions to backend modules
 const mapAdminToForm = (admin, modules) => {
   const existingPermissions = Array.isArray(admin.permissions)
     ? admin.permissions
@@ -161,7 +156,6 @@ function EditSubAdmin() {
 
   console.log('initialValues--------------', initialValues)
 
-  // Fetch modules and admin details
   useEffect(() => {
     let cancelled = false;
 
@@ -176,7 +170,6 @@ function EditSubAdmin() {
       setPageError("");
 
       try {
-        // 1. Fetch modules from backend
         const moduleResponse = await makeApiRequest({
           url: "/get-modules",
           method: "GET",
@@ -198,7 +191,6 @@ function EditSubAdmin() {
 
         setModules(moduleList);
 
-        // 2. Fetch selected admin
         const selectedAdmin = location.state?.admin;
 
         let admin;
@@ -221,7 +213,6 @@ function EditSubAdmin() {
 
         if (cancelled) return;
 
-        // 3. Map admin details and saved permissions
         const formValues = mapAdminToForm(admin, moduleList);
 
         console.log("EDIT FORM VALUES:", formValues);
@@ -251,7 +242,6 @@ function EditSubAdmin() {
     };
   }, [adminId, location.state]);
 
-  // Formik
   const formik = useFormik({
     initialValues,
     enableReinitialize: true,
@@ -267,7 +257,6 @@ function EditSubAdmin() {
       setPageError("");
 
       try {
-        // Send only selected permissions
         const payload = {
           name: values.name.trim(),
           email: values.email.trim().toLowerCase(),
@@ -331,7 +320,6 @@ function EditSubAdmin() {
     },
   });
 
-  // Handle View/Edit permission changes
   const handlePermissionChange = (module, type, checked) => {
     const permissions = [...formik.values.permissions];
 
@@ -351,12 +339,10 @@ function EditSubAdmin() {
         [type]: checked,
       };
 
-      // Edit selected -> View automatically selected
       if (type === "edit" && checked) {
         updatedPermission.view = true;
       }
 
-      // View unselected -> Edit automatically unselected
       if (type === "view" && !checked) {
         updatedPermission.edit = false;
       }
@@ -377,7 +363,6 @@ function EditSubAdmin() {
       ? formik.errors.permissions
       : "";
 
-  // Loading screen
   if (initialLoading) {
     return (
       <div className="container-fluid py-5 text-center">

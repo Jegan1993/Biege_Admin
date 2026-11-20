@@ -241,7 +241,6 @@ const AIRecommendations = ({ productId }) => {
                       )}
 
                       <div className="card-body">
-                        {/* Product Name and Match Score */}
                         <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
                           <h5 className="card-title mb-0">
                             {product.name || "Recommended Product"}
@@ -252,19 +251,16 @@ const AIRecommendations = ({ productId }) => {
                           </span>
                         </div>
 
-                        {/* Product Price */}
                         {product.price !== undefined && (
                           <p className="fw-bold mb-2">
                             ₹{product.price}
                           </p>
                         )}
 
-                        {/* Recommendation Reason */}
                         <p className="text-muted">
                           {getReason(item)}
                         </p>
 
-                        {/* Matched Concerns */}
                         {matchedConcerns.length > 0 && (
                           <div className="mb-3">
                             <strong>Matched Concerns</strong>
@@ -286,14 +282,12 @@ const AIRecommendations = ({ productId }) => {
                           </div>
                         )}
 
-                        {/* Product Description */}
                         {product.description && (
                           <p className="small text-muted">
                             {product.description}
                           </p>
                         )}
 
-                        {/* View Product */}
                         {product._id && (
                           <button
                             type="button"
@@ -317,7 +311,7 @@ const AIRecommendations = ({ productId }) => {
             </div>
           )}
 
-          {/* Product Details Modal */}
+
           {showProductModal && selectedProduct && (
             <div
               className="modal d-block"
@@ -336,7 +330,6 @@ const AIRecommendations = ({ productId }) => {
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="modal-content">
-                  {/* Modal Header */}
                   <div className="modal-header">
                     <h5 className="modal-title">
                       Product & AI Analysis Details
@@ -350,9 +343,7 @@ const AIRecommendations = ({ productId }) => {
                     />
                   </div>
 
-                  {/* Modal Body */}
                   <div className="modal-body">
-                    {/* 1. Product Details */}
                     <div className="row mb-4">
                       <div className="col-md-5 mb-3">
                         {selectedProduct.image ? (
@@ -423,7 +414,6 @@ const AIRecommendations = ({ productId }) => {
 
                     <hr />
 
-                    {/* 2. AI Recommendation Details */}
                     <div className="mb-4">
                       <h5 className="mb-3">
                         <i className="fas fa-brain me-2 text-primary" />
@@ -486,9 +476,7 @@ const AIRecommendations = ({ productId }) => {
 
                     <hr />
 
-                    {/* 3. Skin Analysis Information */}
 
-                    {/* Skin Analysis Information */}
                     <div className="mb-4">
                       <h5 className="mb-3">Skin Analysis Information</h5>
 
@@ -675,7 +663,6 @@ const AIRecommendations = ({ productId }) => {
                         )}
                       </div>
                     </div>
-                    {/* 4. AI Visible Observations */}
                     <div className="mb-4">
                       <h5 className="mb-3">
                         AI Visible Observations
@@ -739,7 +726,6 @@ const AIRecommendations = ({ productId }) => {
 
                     <hr />
 
-                    {/* 5. Important Skin Care Suggestions */}
                     <div className="mb-4">
                       <h5 className="mb-3">
                         <i className="fas fa-lightbulb me-2 text-success" />
@@ -791,7 +777,6 @@ const AIRecommendations = ({ productId }) => {
 
                     <hr />
 
-                    {/* 6. Analysis Limitations */}
                     <div className="mb-4">
                       <h5 className="mb-3">
                         Analysis Limitations
@@ -818,7 +803,6 @@ const AIRecommendations = ({ productId }) => {
                       </div>
                     </div>
 
-                    {/* 7. Professional Advice */}
                     {analysis.requiresProfessionalAdvice && (
                       <div className="alert alert-warning">
                         <strong>Professional Advice:</strong>{" "}
@@ -826,7 +810,6 @@ const AIRecommendations = ({ productId }) => {
                       </div>
                     )}
 
-                    {/* 8. Medical Disclaimer */}
                     <div className="alert alert-info mb-0">
                       <strong>Medical Disclaimer:</strong>{" "}
                       {analysis.medicalDisclaimer ||
@@ -834,7 +817,6 @@ const AIRecommendations = ({ productId }) => {
                     </div>
                   </div>
 
-                  {/* Modal Footer */}
                   <div className="modal-footer">
                     <button
                       type="button"

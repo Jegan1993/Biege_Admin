@@ -953,7 +953,7 @@ function ViewInventory() {
               </select>
             </div>
 
-            <div className="col-md-6">
+            {/* <div className="col-md-6">
               <label className="form-label">Warehouse</label>
               <select
                 className="form-select"
@@ -967,7 +967,7 @@ function ViewInventory() {
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

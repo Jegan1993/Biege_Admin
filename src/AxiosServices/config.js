@@ -2,7 +2,7 @@ let config = {};
 let environment = "local";
 if (environment == "local") {
   config = {
-    adminBackendUrl: "http://localhost:3003/admin/",
+    adminBackendUrl: "/admin/",
   };
 } else {
   config = {
