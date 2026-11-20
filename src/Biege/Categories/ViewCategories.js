@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
 import * as Yup from "yup";
@@ -23,13 +22,10 @@ const categoryValidationSchema = Yup.object({
 
   parentCategory: Yup.string().nullable(),
 
-  description: Yup.string()
-    .max(500, "Description cannot exceed 500 characters"),
+  description: Yup.string().max(500, "Description cannot exceed 500 characters"),
 
   displayOrder: Yup.number()
-    .transform((value, originalValue) =>
-      originalValue === "" ? NaN : value
-    )
+    .transform((value, originalValue) => (originalValue === "" ? NaN : value))
     .typeError("Display order must be a number")
     .integer("Display order must be a whole number")
     .min(0, "Display order cannot be negative")
@@ -46,22 +42,13 @@ const categoryValidationSchema = Yup.object({
       "Only JPG, JPEG, PNG and WEBP images are allowed",
       (value) => {
         if (!value) return true;
-
-        return [
-          "image/jpeg",
-          "image/png",
-          "image/webp",
-        ].includes(value.type);
+        return ["image/jpeg", "image/png", "image/webp"].includes(value.type);
       }
     )
-    .test(
-      "imageSize",
-      "Image size cannot exceed 5MB",
-      (value) => {
-        if (!value) return true;
-        return value.size <= 5 * 1024 * 1024;
-      }
-    ),
+    .test("imageSize", "Image size cannot exceed 5MB", (value) => {
+      if (!value) return true;
+      return value.size <= 5 * 1024 * 1024;
+    }),
 });
 
 const initialFormData = {
@@ -73,6 +60,47 @@ const initialFormData = {
   status: "ACTIVE",
 };
 
+const slugify = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const getParentId = (category) =>
+  category?.parentCategory?._id || category?.parentCategory || null;
+
+// ================= TAILWIND CLASS HELPERS =================
+
+const btnPrimary =
+  "rounded-md bg-[#e98d9d] px-[18px] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#d97589]";
+
+const btnGhost =
+  "rounded-md border border-[#e3c8cc] bg-white px-[18px] py-2.5 text-[13px] font-semibold text-[#8c3d4e] transition hover:border-[#e98d9d] hover:bg-[#faf2f3]";
+
+const btnDanger =
+  "mr-auto rounded-md border border-red-200 bg-red-50 px-[18px] py-2.5 text-[13px] font-semibold text-red-700 transition hover:bg-red-600 hover:text-white";
+
+const rowBtn =
+  "whitespace-nowrap rounded-md border border-[#e3c8cc] bg-white px-3 py-[7px] text-xs font-semibold text-[#8c3d4e] transition hover:bg-[#e3c8cc]";
+
+const rowBtnEdit =
+  "whitespace-nowrap rounded-md border border-[#e98d9d] bg-[#e98d9d] px-3 py-[7px] text-xs font-semibold text-white transition hover:bg-[#d97589]";
+
+const fieldCore =
+  "w-full rounded-md border px-3 py-2.5 text-[13px] text-[#26334a] outline-none transition focus:ring-4";
+
+const fieldOk =
+  "border-[#e3c8cc] bg-white focus:border-[#e98d9d] focus:ring-[#e98d9d]/30";
+
+const fieldBad =
+  "border-red-600 bg-red-50 focus:border-red-600 focus:ring-red-200";
+
+const thClass =
+  "whitespace-nowrap px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-[#8c3d4e]";
+
+const tdClass = "border-b border-[#edf0f5] px-4 py-3.5 align-middle text-[13px]";
+
 function ViewCategories() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -82,8 +110,14 @@ function ViewCategories() {
   const [image, setImage] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
   const [errors, setErrors] = useState({});
+  const [slugTouched, setSlugTouched] = useState(false);
 
   const [formData, setFormData] = useState({ ...initialFormData });
+
+  // list controls
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [collapsedIds, setCollapsedIds] = useState(new Set());
 
   // ================= FETCH CATEGORIES =================
 
@@ -97,7 +131,6 @@ function ViewCategories() {
       });
 
       const result = response?.data?.data || response?.data || [];
-
       setCategories(Array.isArray(result) ? result : []);
     } catch (error) {
       console.error("Fetch categories error:", error);
@@ -116,26 +149,31 @@ function ViewCategories() {
   const handleChange = async (e) => {
     const { name, value } = e.target;
 
-    const updatedData = {
-      ...formData,
-      [name]: value,
-    };
+    let updatedData = { ...formData, [name]: value };
+
+    // auto-generate slug from name until the user edits slug manually
+    if (name === "name" && !editId && !slugTouched) {
+      updatedData.slug = slugify(value);
+    }
+    if (name === "slug") {
+      setSlugTouched(true);
+    }
 
     setFormData(updatedData);
 
-    if (errors[name]) {
-      try {
-        await categoryValidationSchema.validateAt(name, updatedData);
+    const fieldsToRevalidate = [name];
+    if (name === "name" && updatedData.slug !== formData.slug) {
+      fieldsToRevalidate.push("slug");
+    }
 
-        setErrors((prev) => ({
-          ...prev,
-          [name]: "",
-        }));
-      } catch (error) {
-        setErrors((prev) => ({
-          ...prev,
-          [name]: error.message,
-        }));
+    for (const field of fieldsToRevalidate) {
+      if (errors[field]) {
+        try {
+          await categoryValidationSchema.validateAt(field, updatedData);
+          setErrors((prev) => ({ ...prev, [field]: "" }));
+        } catch (error) {
+          setErrors((prev) => ({ ...prev, [field]: error.message }));
+        }
       }
     }
   };
@@ -144,28 +182,18 @@ function ViewCategories() {
 
   const handleImageChange = async (e) => {
     const selectedFile = e.target.files?.[0];
-
     if (!selectedFile) return;
 
     setImage(selectedFile);
-
-    const imageUrl = URL.createObjectURL(selectedFile);
-    setPreviewImage(imageUrl);
+    setPreviewImage(URL.createObjectURL(selectedFile));
 
     try {
       await categoryValidationSchema.validateAt("image", {
         image: selectedFile,
       });
-
-      setErrors((prev) => ({
-        ...prev,
-        image: "",
-      }));
+      setErrors((prev) => ({ ...prev, image: "" }));
     } catch (error) {
-      setErrors((prev) => ({
-        ...prev,
-        image: error.message,
-      }));
+      setErrors((prev) => ({ ...prev, image: error.message }));
     }
   };
 
@@ -177,26 +205,18 @@ function ViewCategories() {
     setPreviewImage("");
     setEditId(null);
     setErrors({});
+    setSlugTouched(false);
     setShowForm(false);
   };
-
-  // ================= ADD CATEGORY =================
 
   const handleAddCategory = () => {
     resetForm();
     setShowForm(true);
   };
 
-  // ================= ADD CHILD CATEGORY =================
-
   const handleAddChild = (category) => {
     resetForm();
-
-    setFormData({
-      ...initialFormData,
-      parentCategory: category._id,
-    });
-
+    setFormData({ ...initialFormData, parentCategory: category._id });
     setShowForm(true);
   };
 
@@ -205,30 +225,21 @@ function ViewCategories() {
   const validateForm = async () => {
     try {
       await categoryValidationSchema.validate(
-        {
-          ...formData,
-          image,
-        },
-        {
-          abortEarly: false,
-        }
+        { ...formData, image },
+        { abortEarly: false }
       );
-
       setErrors({});
       return true;
     } catch (error) {
       if (error instanceof Yup.ValidationError) {
         const validationErrors = {};
-
         error.inner.forEach((item) => {
           if (item.path && !validationErrors[item.path]) {
             validationErrors[item.path] = item.message;
           }
         });
-
         setErrors(validationErrors);
       }
-
       return false;
     }
   };
@@ -239,7 +250,6 @@ function ViewCategories() {
     e.preventDefault();
 
     const isValid = await validateForm();
-
     if (!isValid) return;
 
     try {
@@ -257,21 +267,14 @@ function ViewCategories() {
       }
 
       const response = await makeApiRequest({
-        url: editId
-          ? `update-category/${editId}`
-          : "create-category",
+        url: editId ? `update-category/${editId}` : "create-category",
         method: editId ? "PUT" : "POST",
         data: payload,
         header: "image",
       });
 
-      if (
-        response?.data?.status === false ||
-        response?.status === false
-      ) {
-        toast.error(
-          response?.data?.message || "Category operation failed"
-        );
+      if (response?.data?.status === false || response?.status === false) {
+        toast.error(response?.data?.message || "Category operation failed");
         return;
       }
 
@@ -285,10 +288,7 @@ function ViewCategories() {
       fetchCategories();
     } catch (error) {
       console.error("Submit category error:", error);
-
-      toast.error(
-        error?.response?.data?.message || "Something went wrong"
-      );
+      toast.error(error?.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -297,14 +297,12 @@ function ViewCategories() {
   const handleEdit = (category) => {
     setErrors({});
     setEditId(category._id);
+    setSlugTouched(true);
 
     setFormData({
       name: category.name || "",
       slug: category.slug || "",
-      parentCategory:
-        category.parentCategory?._id ||
-        category.parentCategory ||
-        "",
+      parentCategory: getParentId(category) || "",
       description: category.description || "",
       displayOrder: category.displayOrder ?? 0,
       status: category.status || "ACTIVE",
@@ -321,7 +319,6 @@ function ViewCategories() {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this category?"
     );
-
     if (!confirmDelete) return;
 
     try {
@@ -330,45 +327,28 @@ function ViewCategories() {
         method: "DELETE",
       });
 
-      if (
-        response?.data?.status === false ||
-        response?.status === false
-      ) {
-        toast.error(
-          response?.data?.message || "Delete failed"
-        );
+      if (response?.data?.status === false || response?.status === false) {
+        toast.error(response?.data?.message || "Delete failed");
         return;
       }
 
       toast.success("Category deleted successfully");
-
       resetForm();
       fetchCategories();
     } catch (error) {
       console.error("Delete category error:", error);
-
-      toast.error(
-        error?.response?.data?.message ||
-        "Failed to delete category"
-      );
+      toast.error(error?.response?.data?.message || "Failed to delete category");
     }
   };
 
   // ================= CATEGORY TREE =================
-
-  const getParentId = (category) =>
-    category?.parentCategory?._id ||
-    category?.parentCategory ||
-    null;
 
   const getDescendantIds = (categoryId) => {
     const descendantIds = new Set();
 
     const findChildren = (parentId) => {
       categories.forEach((item) => {
-        const itemParentId = getParentId(item);
-
-        if (String(itemParentId || "") === String(parentId)) {
+        if (String(getParentId(item) || "") === String(parentId)) {
           if (!descendantIds.has(String(item._id))) {
             descendantIds.add(String(item._id));
             findChildren(item._id);
@@ -378,1008 +358,573 @@ function ViewCategories() {
     };
 
     findChildren(categoryId);
-
     return descendantIds;
   };
 
-  const buildCategoryTree = (items, parentId = null) => {
-    return items
+  const buildCategoryTree = (items, parentId = null) =>
+    items
       .filter(
-        (item) =>
-          String(getParentId(item) || "") ===
-          String(parentId || "")
+        (item) => String(getParentId(item) || "") === String(parentId || "")
       )
-      .sort(
-        (a, b) =>
-          Number(a.displayOrder || 0) -
-          Number(b.displayOrder || 0)
-      )
+      .sort((a, b) => Number(a.displayOrder || 0) - Number(b.displayOrder || 0))
       .map((item) => ({
         ...item,
         children: buildCategoryTree(items, item._id),
       }));
-  };
 
   const flattenCategories = (items, level = 0) => {
     let result = [];
-
     items.forEach((item) => {
-      result.push({
-        ...item,
-        level,
-      });
-
+      result.push({ ...item, level });
       if (item.children?.length) {
-        result = result.concat(
-          flattenCategories(item.children, level + 1)
-        );
+        result = result.concat(flattenCategories(item.children, level + 1));
       }
     });
-
     return result;
   };
 
-  const categoryTree = buildCategoryTree(categories);
-  const flattenedCategories = flattenCategories(categoryTree);
+  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
+  const flattenedCategories = useMemo(
+    () => flattenCategories(categoryTree),
+    [categoryTree]
+  );
 
-  const excludedIds = editId
-    ? getDescendantIds(editId)
-    : new Set();
+  const excludedIds = editId ? getDescendantIds(editId) : new Set();
 
-  // ================= CATEGORY ROW COLORS =================
+  // ================= VISIBLE ROWS (search / filter / collapse) =================
 
-  const getCategoryStyle = (level) => {
-    if (level === 0) {
-      return {
-        background: "#F2EDFF",
-        borderLeft: "5px solid #7652C8",
-        color: "#39246B",
-      };
+  const isFiltering = search.trim() !== "" || statusFilter !== "ALL";
+
+  const visibleRows = useMemo(() => {
+    if (isFiltering) {
+      const q = search.trim().toLowerCase();
+      return flattenedCategories.filter((item) => {
+        const matchesSearch =
+          !q ||
+          (item.name || "").toLowerCase().includes(q) ||
+          (item.slug || "").toLowerCase().includes(q);
+        const matchesStatus =
+          statusFilter === "ALL" || (item.status || "ACTIVE") === statusFilter;
+        return matchesSearch && matchesStatus;
+      });
     }
 
-    if (level === 1) {
-      return {
-        background: "#EAF4FF",
-        borderLeft: "5px solid #3986D7",
-        color: "#174B80",
-      };
-    }
-
-    if (level === 2) {
-      return {
-        background: "#EAF8F0",
-        borderLeft: "5px solid #39A36B",
-        color: "#205D3D",
-      };
-    }
-
-    return {
-      background: "#FFF4E8",
-      borderLeft: "5px solid #D9903D",
-      color: "#81501D",
+    const rows = [];
+    const walk = (nodes, level) => {
+      nodes.forEach((node) => {
+        rows.push({ ...node, level });
+        if (node.children?.length && !collapsedIds.has(String(node._id))) {
+          walk(node.children, level + 1);
+        }
+      });
     };
+    walk(categoryTree, 0);
+    return rows;
+  }, [categoryTree, flattenedCategories, collapsedIds, search, statusFilter, isFiltering]);
+
+  const toggleCollapse = (id) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      const key = String(id);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
   };
 
-  // ================= ERROR FIELD STYLE =================
+  const collapseAll = () =>
+    setCollapsedIds(
+      new Set(
+        flattenedCategories
+          .filter((c) => c.children?.length)
+          .map((c) => String(c._id))
+      )
+    );
 
-  const getInputStyle = (fieldName) => ({
-    ...styles.input,
-    ...(errors[fieldName] ? styles.inputError : {}),
-  });
+  const expandAll = () => setCollapsedIds(new Set());
 
-  const getTextareaStyle = (fieldName) => ({
-    ...styles.textarea,
-    ...(errors[fieldName] ? styles.inputError : {}),
-  });
+  // ================= STATS =================
 
-  // ================= GET PARENT CATEGORY NAME =================
+  const totalCount = categories.length;
+  const activeCount = categories.filter(
+    (c) => (c.status || "ACTIVE") === "ACTIVE"
+  ).length;
+  const mainCount = categories.filter((c) => !getParentId(c)).length;
+
+  const statCards = [
+    { label: "Total Categories", value: totalCount, icon: "fa-tags", color: "#23965e", bg: "#e4f7ed" },
+    { label: "Main Categories", value: mainCount, icon: "fa-sitemap", color: "#5269cb", bg: "#e9edff" },
+    { label: "Active", value: activeCount, icon: "fa-check-circle", color: "#218cac", bg: "#e1f4fb" },
+    { label: "Inactive", value: totalCount - activeCount, icon: "fa-ban", color: "#73788b", bg: "#eeeef3" },
+  ];
+
+  // ================= HELPERS =================
 
   const getParentCategoryName = (category) => {
     const parentId = getParentId(category);
+    if (!parentId) return null;
 
-    if (!parentId) {
-      return "Main Category";
-    }
-
-    const parent = categories.find(
-      (item) => String(item._id) === String(parentId)
-    );
-
-    return (
-      parent?.name ||
-      category.parentCategory?.name ||
-      "Parent category not found"
-    );
+    const parent = categories.find((c) => String(c._id) === String(parentId));
+    return parent?.name || category.parentCategory?.name || "Unknown";
   };
 
-  // ================= DISPLAY ALL CATEGORY FIELDS =================
+  const fieldClass = (field) =>
+    `${fieldCore} ${errors[field] ? fieldBad : fieldOk}`;
 
-  const renderCategoryFields = (category) => (
-    <div style={styles.categoryFields}>
-      <div style={styles.categoryField}>
-        <span style={styles.fieldLabel}>Category Name</span>
-        <span style={styles.fieldValue}>
-          {category.name || "-"}
-        </span>
-      </div>
-
-      <div style={styles.categoryField}>
-        <span style={styles.fieldLabel}>Slug</span>
-        <span style={styles.fieldValue}>
-          {category.slug || "-"}
-        </span>
-      </div>
-
-      <div style={styles.categoryField}>
-        <span style={styles.fieldLabel}>Parent Category</span>
-        <span style={styles.fieldValue}>
-          {getParentCategoryName(category)}
-        </span>
-      </div>
-
-      <div style={styles.categoryField}>
-        <span style={styles.fieldLabel}>Description</span>
-        <span style={styles.fieldValue}>
-          {category.description || "-"}
-        </span>
-      </div>
-
-      <div style={styles.categoryField}>
-        <span style={styles.fieldLabel}>Display Order</span>
-        <span style={styles.fieldValue}>
-          {category.displayOrder ?? 0}
-        </span>
-      </div>
-
-      <div style={styles.categoryField}>
-        <span style={styles.fieldLabel}>Status</span>
-        <span style={styles.fieldValue}>
-          {category.status || "ACTIVE"}
-        </span>
-      </div>
-
-        {/* <div style={styles.categoryField}>
-          <span style={styles.fieldLabel}>Category Image</span>
-
-          {category.image ? (
-            <div style={styles.listImageContainer}>
-              <img
-                src={category.image}
-                alt={category.name || "Category"}
-                style={styles.listImage}
-              />
-              <span style={styles.fieldValue}>Image uploaded</span>
-            </div>
-          ) : (
-            <span style={styles.fieldValue}>No image</span>
-          )}
-        </div> */}
-    </div>
-  );
-
-  // ================= RENDER CHILD ROWS =================
-
-  const renderChildCategory = (category, level = 1) => {
-    const rowStyle = getCategoryStyle(level);
-
-    return (
-      <React.Fragment key={category._id}>
-        <div
-          style={{
-            ...styles.categoryRow,
-            ...rowStyle,
-            marginLeft: level * 28,
-          }}
-        >
-          <div style={styles.categoryInfo}>
-            <div style={styles.smallImage}>
-              {category.image ? (
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  style={styles.thumbnail}
-                />
-              ) : (
-                <span style={styles.noImageText}>IMG</span>
-              )}
-            </div>
-
-            <div style={styles.categoryDetails}>
-              {renderCategoryFields(category)}
-            </div>
-          </div>
-
-          <div style={styles.rowRight}>
-            <span
-              style={{
-                ...styles.statusBadge,
-                background:
-                  category.status === "ACTIVE"
-                    ? "#D9F5E4"
-                    : "#FFE6E6",
-                color:
-                  category.status === "ACTIVE"
-                    ? "#167344"
-                    : "#B42318",
-              }}
-            >
-              {category.status || "ACTIVE"}
-            </span>
-
-            <button
-              type="button"
-              style={styles.addChildButton}
-              onClick={() => handleAddChild(category)}
-            >
-              + Add Child
-            </button>
-
-            <button
-              type="button"
-              style={styles.editButton}
-              onClick={() => handleEdit(category)}
-            >
-              Edit
-            </button>
-          </div>
-        </div>
-
-        {category.children?.length > 0 && (
-          <div style={styles.childContainer}>
-            {category.children.map((child) =>
-              renderChildCategory(child, level + 1)
-            )}
-          </div>
-        )}
-      </React.Fragment>
-    );
-  };
-
-  // ================= MAIN UI =================
+  // ================= RENDER =================
 
   return (
-    <div style={styles.page}>
+    <div className="min-h-screen bg-[#f6f7fb] p-4 sm:p-7">
       {/* HEADER */}
-
-      <div style={styles.header}>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 style={styles.heading}>Categories</h2>
-          <p style={styles.subHeading}>
-            Manage parent and child categories
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+            Categories
+          </h3>
+          <p className="text-sm text-[#8791a5]">
+            Manage parent and child categories for your storefront menu and
+            filters.
           </p>
         </div>
 
-        {!showForm && (
-          <button
-            type="button"
-            style={styles.createButton}
-            onClick={handleAddCategory}
+        <button type="button" className={btnPrimary} onClick={handleAddCategory}>
+          + Create Category
+        </button>
+      </div>
+
+      {/* STATS */}
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((card) => (
+          <div
+            key={card.label}
+            className="flex items-start justify-between rounded-[13px] border border-[#edf0f5] bg-white px-[22px] py-5 shadow-[0_3px_12px_rgba(30,40,70,0.035)]"
           >
-            + Create Category
-          </button>
+            <div>
+              <div className="mb-2 text-sm text-[#8791a5]">{card.label}</div>
+              <div className="text-[30px] font-bold leading-none text-[#26334a]">
+                {card.value}
+              </div>
+            </div>
+
+            <div
+              className="flex h-[46px] w-[46px] min-w-[46px] items-center justify-center rounded-xl text-[19px]"
+              style={{ background: card.bg, color: card.color }}
+            >
+              <i className={`fa ${card.icon}`}></i>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* TOOLBAR */}
+      <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
+        <input
+          type="text"
+          placeholder="Search by name or slug..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="min-w-[220px] max-w-full flex-1 rounded-md border border-[#e3c8cc] bg-white px-3.5 py-2.5 text-[13px] text-[#26334a] outline-none focus:border-[#e98d9d] focus:ring-4 focus:ring-[#e98d9d]/30 sm:max-w-[360px]"
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-md border border-[#e3c8cc] bg-white px-3 py-2.5 text-[13px] text-[#26334a] outline-none focus:border-[#e98d9d] focus:ring-4 focus:ring-[#e98d9d]/30"
+        >
+          <option value="ALL">All status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
+
+        <div className="flex-1" />
+
+        {!isFiltering && (
+          <>
+            <button type="button" className={btnGhost} onClick={expandAll}>
+              Expand all
+            </button>
+            <button type="button" className={btnGhost} onClick={collapseAll}>
+              Collapse all
+            </button>
+          </>
         )}
       </div>
 
-      {/* CATEGORY FORM */}
-
-      {showForm && (
-        <div style={styles.formContainer}>
-          <div style={styles.formHeader}>
-            <h3 style={styles.formTitle}>
-              {editId ? "Edit Category" : "Create Category"}
-            </h3>
-
-            <button
-              type="button"
-              style={styles.closeButton}
-              onClick={resetForm}
-            >
-              ✕
-            </button>
+      {/* TABLE */}
+      <div className="overflow-hidden rounded-[13px] border border-[#edf0f5] bg-white shadow-[0_3px_12px_rgba(30,40,70,0.035)]">
+        {loading ? (
+          <div className="px-5 py-[60px] text-center text-[#8791a5]">
+            <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-[3px] border-[#e3c8cc] border-t-[#e98d9d]" />
+            <p className="text-sm">Loading categories...</p>
           </div>
+        ) : visibleRows.length === 0 ? (
+          <div className="px-5 py-[60px] text-center text-[#8791a5]">
+            <h3 className="mb-1.5 text-[22px] font-bold text-[#26334a]">
+              {isFiltering ? "No matching categories" : "No categories yet"}
+            </h3>
+            <p className="text-sm">
+              {isFiltering
+                ? "Try a different search or status filter."
+                : "Create your first category to get started."}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] border-collapse">
+              <thead className="bg-[#e3c8cc]">
+                <tr>
+                  <th className={thClass}>Category</th>
+                  <th className={thClass}>Slug</th>
+                  <th className={thClass}>Parent</th>
+                  <th className={`${thClass} !text-center`}>Order</th>
+                  <th className={thClass}>Status</th>
+                  <th className={`${thClass} !text-right`}>Actions</th>
+                </tr>
+              </thead>
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div style={styles.formGrid}>
-              {/* CATEGORY NAME */}
+              <tbody>
+                {visibleRows.map((category) => {
+                  const hasChildren = category.children?.length > 0;
+                  const isCollapsed = collapsedIds.has(String(category._id));
+                  const status = category.status || "ACTIVE";
+                  const parentName = getParentCategoryName(category);
+                  // const indent = isFiltering ? 0 : category.level * 28;
 
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Category Name *
-                </label>
+                  return (
+                    <tr
+                      key={category._id}
+                      className="transition-colors hover:bg-[#faf2f3]"
+                    >
+                      <td className={tdClass}>
+                        <div
+                          className="flex items-center gap-3"
+                          
+                        >
+                          {hasChildren && !isFiltering ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleCollapse(category._id)}
+                              aria-label={isCollapsed ? "Expand" : "Collapse"}
+                              className={`h-6 w-6 shrink-0 rounded-[5px] border border-[#e3c8cc] bg-white text-[11px] leading-none text-[#8c3d4e] transition hover:bg-[#e3c8cc] ${
+                                isCollapsed ? "-rotate-90" : ""
+                              }`}
+                            >
+                              ▼
+                            </button>
+                          ) : (
+                            <span className="inline-block w-6 shrink-0" />
+                          )}
 
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter category name"
-                  style={getInputStyle("name")}
-                />
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#edf0f5] bg-[#faf2f3] text-[10px] font-bold text-[#8791a5]">
+                            {category.image ? (
+                              <img
+                                src={category.image}
+                                alt={category.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              "IMG"
+                            )}
+                          </div>
 
-                {errors.name && (
-                  <span style={styles.errorText}>
-                    {errors.name}
-                  </span>
-                )}
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-[#26334a]">
+                              {category.name || "-"}
+                              {hasChildren && (
+                                <span className="ml-2 text-[11px] font-medium text-[#8791a5]">
+                                  {category.children.length} sub
+                                </span>
+                              )}
+                            </div>
+
+                            {category.description && (
+                              <div
+                                className="mt-0.5 max-w-[320px] truncate text-xs text-[#8791a5]"
+                                title={category.description}
+                              >
+                                {category.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className={tdClass}>
+                        <span className="rounded border border-[#e3c8cc] bg-[#faf2f3] px-2 py-0.5 font-mono text-xs text-[#8c3d4e]">
+                          {category.slug || "-"}
+                        </span>
+                      </td>
+
+                      <td className={tdClass}>
+                        <span
+                          className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            parentName
+                              ? "bg-[#e3c8cc] text-[#8c3d4e]"
+                              : "bg-[#e98d9d] text-white"
+                          }`}
+                        >
+                          {parentName || "Main"}
+                        </span>
+                      </td>
+
+                      <td className={`${tdClass} text-center`}>
+                        {category.displayOrder ?? 0}
+                      </td>
+
+                      <td className={tdClass}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide ${
+                            status === "ACTIVE"
+                              ? "bg-[#e3f2e8] text-[#2f6b46]"
+                              : "bg-[#fdecea] text-[#b42318]"
+                          }`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {status}
+                        </span>
+                      </td>
+
+                      <td className={`${tdClass} text-right`}>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            className={rowBtn}
+                            onClick={() => handleAddChild(category)}
+                          >
+                            + Add Child
+                          </button>
+                          <button
+                            type="button"
+                            className={rowBtnEdit}
+                            onClick={() => handleEdit(category)}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* FORM MODAL */}
+      {showForm && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/45 px-4 py-10"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) resetForm();
+          }}
+        >
+          <div className="w-full max-w-[720px] overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#e3c8cc] bg-[#e3c8cc] px-6 py-5">
+              <div>
+                <h3 className="text-2xl font-bold text-[#26334a]">
+                  {editId ? "Edit category" : "Create category"}
+                </h3>
+                <p className="mt-0.5 text-xs text-[#8c3d4e]">
+                  Fields marked with * are required
+                </p>
               </div>
-
-              {/* SLUG */}
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Slug *</label>
-
-                <input
-                  type="text"
-                  name="slug"
-                  value={formData.slug}
-                  onChange={handleChange}
-                  placeholder="Enter slug"
-                  style={getInputStyle("slug")}
-                />
-
-                {errors.slug && (
-                  <span style={styles.errorText}>
-                    {errors.slug}
-                  </span>
-                )}
-              </div>
-
-              {/* PARENT CATEGORY */}
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Parent Category
-                </label>
-
-                <select
-                  name="parentCategory"
-                  value={formData.parentCategory}
-                  onChange={handleChange}
-                  style={styles.input}
-                >
-                  <option value="">Main Category</option>
-
-                  {flattenedCategories
-                    .filter(
-                      (item) =>
-                        String(item._id) !==
-                        String(editId || "") &&
-                        !excludedIds.has(String(item._id))
-                    )
-                    .map((item) => (
-                      <option
-                        key={item._id}
-                        value={item._id}
-                      >
-                        {"   ".repeat(item.level)}
-                        {item.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* DISPLAY ORDER */}
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Display Order *
-                </label>
-
-                <input
-                  type="number"
-                  name="displayOrder"
-                  value={formData.displayOrder}
-                  onChange={handleChange}
-                  style={getInputStyle("displayOrder")}
-                />
-
-                {errors.displayOrder && (
-                  <span style={styles.errorText}>
-                    {errors.displayOrder}
-                  </span>
-                )}
-              </div>
-
-              {/* STATUS */}
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Status *</label>
-
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  style={getInputStyle("status")}
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                </select>
-
-                {errors.status && (
-                  <span style={styles.errorText}>
-                    {errors.status}
-                  </span>
-                )}
-              </div>
-
-              {/* IMAGE */}
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Category Image
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleImageChange}
-                  style={styles.fileInput}
-                />
-
-                {errors.image && (
-                  <span style={styles.errorText}>
-                    {errors.image}
-                  </span>
-                )}
-
-                {previewImage && (
-                  <div style={styles.previewContainer}>
-                    <img
-                      src={previewImage}
-                      alt="Category preview"
-                      style={styles.previewImage}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* DESCRIPTION */}
-
-              <div
-                style={{
-                  ...styles.formGroup,
-                  gridColumn: "1 / -1",
-                }}
-              >
-                <label style={styles.label}>
-                  Description
-                </label>
-
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Enter category description"
-                  rows={4}
-                  style={getTextareaStyle("description")}
-                />
-
-                {errors.description && (
-                  <span style={styles.errorText}>
-                    {errors.description}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div style={styles.formActions}>
-              {editId && (
-                <button
-                  type="button"
-                  style={styles.deleteButton}
-                  onClick={() => handleDelete(editId)}
-                >
-                  Delete
-                </button>
-              )}
 
               <button
                 type="button"
-                style={styles.cancelButton}
                 onClick={resetForm}
+                aria-label="Close"
+                className="h-[34px] w-[34px] rounded-full border border-[#e3c8cc] bg-white text-sm text-[#8c3d4e] transition hover:bg-[#e98d9d] hover:text-white"
               >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                style={styles.saveButton}
-              >
-                {editId ? "Update Category" : "Create Category"}
+                ✕
               </button>
             </div>
-          </form>
-        </div>
-      )}
 
-      {/* CATEGORY LIST */}
-
-      {!showForm && (
-        <div style={styles.listContainer}>
-          {loading ? (
-            <div style={styles.message}>
-              Loading categories...
-            </div>
-          ) : categoryTree.length === 0 ? (
-            <div style={styles.emptyState}>
-              <h3>No Categories Found</h3>
-              <p>Create your first category to get started.</p>
-            </div>
-          ) : (
-            categoryTree.map((parent) => {
-              const parentStyle = getCategoryStyle(0);
-
-              return (
-                <div
-                  key={parent._id}
-                  style={styles.parentSection}
-                >
-                  <div
-                    style={{
-                      ...styles.categoryRow,
-                      ...parentStyle,
-                    }}
-                  >
-                    <div style={styles.categoryInfo}>
-                      <div style={styles.parentImage}>
-                        {parent.image ? (
-                          <img
-                            src={parent.image}
-                            alt={parent.name}
-                            style={styles.thumbnail}
-                          />
-                        ) : (
-                          <span style={styles.noImageText}>
-                            IMG
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={styles.categoryDetails}>
-                        {renderCategoryFields(parent)}
-
-                        <div style={styles.categoryMeta}>
-                          {parent.children?.length || 0} direct child categories
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={styles.rowRight}>
-                      <span
-                        style={{
-                          ...styles.statusBadge,
-                          background:
-                            parent.status === "ACTIVE"
-                              ? "#D9F5E4"
-                              : "#FFE6E6",
-                          color:
-                            parent.status === "ACTIVE"
-                              ? "#167344"
-                              : "#B42318",
-                        }}
-                      >
-                        {parent.status || "ACTIVE"}
-                      </span>
-
-                      <button
-                        type="button"
-                        style={styles.addChildButton}
-                        onClick={() => handleAddChild(parent)}
-                      >
-                        + Add Child
-                      </button>
-
-                      <button
-                        type="button"
-                        style={styles.editButton}
-                        onClick={() => handleEdit(parent)}
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-
-                  {parent.children?.length > 0 && (
-                    <div style={styles.childContainer}>
-                      {parent.children.map((child) =>
-                        renderChildCategory(child, 1)
-                      )}
-                    </div>
+            <form className="px-6 pt-6" onSubmit={handleSubmit} noValidate>
+              <div className="grid grid-cols-1 gap-x-5 gap-y-[18px] sm:grid-cols-2">
+                {/* NAME */}
+                <div className="flex min-w-0 flex-col gap-[7px]">
+                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                    Category name <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="e.g. Skin care"
+                    className={fieldClass("name")}
+                  />
+                  {errors.name && (
+                    <span className="text-xs font-medium text-red-600">
+                      {errors.name}
+                    </span>
                   )}
                 </div>
-              );
-            })
-          )}
+
+                {/* SLUG */}
+                <div className="flex min-w-0 flex-col gap-[7px]">
+                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                    Slug <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="slug"
+                    value={formData.slug}
+                    onChange={handleChange}
+                    placeholder="e.g. skin-care"
+                    className={fieldClass("slug")}
+                  />
+                  {errors.slug ? (
+                    <span className="text-xs font-medium text-red-600">
+                      {errors.slug}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-[#8791a5]">
+                      Auto-filled from the name. Lowercase, numbers, hyphens.
+                    </span>
+                  )}
+                </div>
+
+                {/* PARENT */}
+                <div className="flex min-w-0 flex-col gap-[7px]">
+                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                    Parent category
+                  </label>
+                  <select
+                    name="parentCategory"
+                    value={formData.parentCategory}
+                    onChange={handleChange}
+                    className={`${fieldCore} ${fieldOk}`}
+                  >
+                    <option value="">Main category</option>
+                    {flattenedCategories
+                      .filter(
+                        (item) =>
+                          String(item._id) !== String(editId || "") &&
+                          !excludedIds.has(String(item._id))
+                      )
+                      .map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {"   ".repeat(item.level)}
+                          {item.level > 0 ? "↳ " : ""}
+                          {item.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* DISPLAY ORDER */}
+                <div className="flex min-w-0 flex-col gap-[7px]">
+                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                    Display order <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="displayOrder"
+                    value={formData.displayOrder}
+                    onChange={handleChange}
+                    className={fieldClass("displayOrder")}
+                  />
+                  {errors.displayOrder && (
+                    <span className="text-xs font-medium text-red-600">
+                      {errors.displayOrder}
+                    </span>
+                  )}
+                </div>
+
+                {/* STATUS */}
+                <div className="flex min-w-0 flex-col gap-[7px]">
+                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                    Status <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className={fieldClass("status")}
+                  >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                  </select>
+                  {errors.status && (
+                    <span className="text-xs font-medium text-red-600">
+                      {errors.status}
+                    </span>
+                  )}
+                </div>
+
+                {/* IMAGE */}
+                <div className="flex min-w-0 flex-col gap-[7px]">
+                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                    Category image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageChange}
+                    className="w-full rounded-md border border-dashed border-[#e98d9d] bg-[#faf2f3] p-2.5 text-xs file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-[#e98d9d] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+                  />
+                  {errors.image && (
+                    <span className="text-xs font-medium text-red-600">
+                      {errors.image}
+                    </span>
+                  )}
+                  {previewImage && (
+                    <img
+                      src={previewImage}
+                      alt="Category preview"
+                      className="mt-1 h-24 w-24 rounded-[10px] border border-[#edf0f5] object-cover"
+                    />
+                  )}
+                </div>
+
+                {/* DESCRIPTION */}
+                <div className="flex min-w-0 flex-col gap-[7px] sm:col-span-2">
+                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Short description for this category"
+                    rows={4}
+                    className={`${fieldClass("description")} resize-y`}
+                  />
+                  {errors.description && (
+                    <span className="text-xs font-medium text-red-600">
+                      {errors.description}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ACTIONS */}
+              <div className="-mx-6 mt-6 flex flex-wrap items-center justify-end gap-2.5 border-t border-[#edf0f5] bg-[#faf2f3] px-6 py-4">
+                {editId && (
+                  <button
+                    type="button"
+                    className={btnDanger}
+                    onClick={() => handleDelete(editId)}
+                  >
+                    Delete
+                  </button>
+                )}
+
+                <button type="button" className={btnGhost} onClick={resetForm}>
+                  Cancel
+                </button>
+
+                <button type="submit" className={btnPrimary}>
+                  {editId ? "Update Category" : "Create Category"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
   );
 }
-
-// ================= STYLES =================
-
-const styles = {
-  page: {
-    width: "100%",
-    padding: "24px",
-    boxSizing: "border-box",
-    background: "#F8F9FC",
-    minHeight: "100vh",
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "15px",
-    marginBottom: "25px",
-  },
-
-  heading: {
-    margin: 0,
-    fontSize: "25px",
-    fontWeight: 700,
-    color: "#222B45",
-  },
-
-  subHeading: {
-    margin: "7px 0 0",
-    color: "#8A94A6",
-    fontSize: "14px",
-  },
-
-  createButton: {
-    border: "none",
-    background: "#5B45B5",
-    color: "#FFFFFF",
-    padding: "12px 20px",
-    borderRadius: "7px",
-    fontSize: "14px",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-
-  listContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "18px",
-  },
-
-  parentSection: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "9px",
-  },
-
-  categoryRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "12px",
-    padding: "14px 16px",
-    borderRadius: "7px",
-    minHeight: "72px",
-    boxSizing: "border-box",
-  },
-
-  categoryInfo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "13px",
-    minWidth: "180px",
-    flex: 1,
-  },
-
-  parentImage: {
-    width: "52px",
-    height: "52px",
-    borderRadius: "7px",
-    overflow: "hidden",
-    background: "#FFFFFF",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  smallImage: {
-    width: "42px",
-    height: "42px",
-    borderRadius: "6px",
-    overflow: "hidden",
-    background: "#FFFFFF",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-
-  thumbnail: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-
-  noImageText: {
-    fontSize: "10px",
-    fontWeight: 700,
-    color: "#9AA3B2",
-  },
-
-  categoryDetails: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flex: 1,
-    minWidth: 0,
-  },
-
-  categoryFields: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: "10px 18px",
-    width: "100%",
-  },
-
-  categoryField: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    minWidth: 0,
-  },
-
-  fieldLabel: {
-    fontSize: "10px",
-    fontWeight: 700,
-    color: "#788397",
-    textTransform: "uppercase",
-  },
-
-  fieldValue: {
-    fontSize: "12px",
-    fontWeight: 600,
-    color: "#344054",
-    overflowWrap: "anywhere",
-  },
-
-  listImageContainer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "7px",
-  },
-
-  listImage: {
-    width: "32px",
-    height: "32px",
-    objectFit: "cover",
-    borderRadius: "5px",
-    border: "1px solid #E1E5EC",
-  },
-
-  parentName: {
-    fontSize: "16px",
-    fontWeight: 700,
-  },
-
-  categoryName: {
-    fontSize: "14px",
-    fontWeight: 600,
-  },
-
-  categoryMeta: {
-    fontSize: "12px",
-    color: "#788397",
-  },
-
-  rowRight: {
-    display: "flex",
-    alignItems: "center",
-    gap: "9px",
-    flexWrap: "wrap",
-  },
-
-  statusBadge: {
-    fontSize: "10px",
-    fontWeight: 700,
-    padding: "5px 9px",
-    borderRadius: "20px",
-  },
-
-  addChildButton: {
-    border: "1px solid #A6B6D0",
-    background: "#FFFFFF",
-    color: "#3D5D83",
-    padding: "8px 11px",
-    borderRadius: "5px",
-    fontSize: "12px",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-
-  editButton: {
-    border: "none",
-    background: "#344C75",
-    color: "#FFFFFF",
-    padding: "8px 16px",
-    borderRadius: "5px",
-    fontSize: "12px",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-
-  childContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-
-  message: {
-    padding: "35px",
-    textAlign: "center",
-    color: "#7A8495",
-  },
-
-  emptyState: {
-    textAlign: "center",
-    padding: "55px 20px",
-    background: "#FFFFFF",
-    border: "1px solid #E7EAF0",
-    borderRadius: "8px",
-    color: "#7A8495",
-  },
-
-  formContainer: {
-    background: "#FFFFFF",
-    border: "1px solid #E7EAF0",
-    borderRadius: "9px",
-    padding: "22px",
-    boxShadow: "0 3px 12px rgba(30, 40, 70, 0.04)",
-  },
-
-  formHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "22px",
-  },
-
-  formTitle: {
-    margin: 0,
-    color: "#222B45",
-    fontSize: "19px",
-    fontWeight: 700,
-  },
-
-  closeButton: {
-    border: "none",
-    background: "#F1F2F6",
-    width: "32px",
-    height: "32px",
-    borderRadius: "50%",
-    cursor: "pointer",
-    color: "#555E70",
-  },
-
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-    gap: "18px",
-  },
-
-  formGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-
-  label: {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#424B5C",
-  },
-
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "11px 12px",
-    border: "1px solid #DCE1E9",
-    borderRadius: "6px",
-    outline: "none",
-    fontSize: "13px",
-    color: "#333D50",
-    background: "#FFFFFF",
-  },
-
-  inputError: {
-    border: "1px solid #DC3545",
-    background: "#FFF8F8",
-  },
-
-  errorText: {
-    display: "block",
-    color: "#DC3545",
-    fontSize: "12px",
-    fontWeight: 500,
-    lineHeight: "16px",
-    marginTop: "2px",
-  },
-
-  fileInput: {
-    width: "100%",
-    fontSize: "13px",
-    padding: "9px",
-    border: "1px solid #DCE1E9",
-    borderRadius: "6px",
-    background: "#FFFFFF",
-  },
-
-  textarea: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "12px",
-    border: "1px solid #DCE1E9",
-    borderRadius: "6px",
-    outline: "none",
-    resize: "vertical",
-    fontSize: "13px",
-    fontFamily: "inherit",
-  },
-
-  previewContainer: {
-    marginTop: "5px",
-  },
-
-  previewImage: {
-    width: "100px",
-    height: "100px",
-    objectFit: "cover",
-    borderRadius: "7px",
-    border: "1px solid #E1E5EC",
-  },
-
-  formActions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "10px",
-    marginTop: "25px",
-    paddingTop: "18px",
-    borderTop: "1px solid #E9ECF1",
-  },
-
-  cancelButton: {
-    border: "1px solid #D5DAE3",
-    background: "#FFFFFF",
-    color: "#4D586B",
-    padding: "10px 18px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-
-  saveButton: {
-    border: "none",
-    background: "#5B45B5",
-    color: "#FFFFFF",
-    padding: "10px 20px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-
-  deleteButton: {
-    border: "none",
-    background: "#D92D20",
-    color: "#FFFFFF",
-    padding: "10px 18px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: 600,
-    marginRight: "auto",
-  },
-};
 
 export default ViewCategories;

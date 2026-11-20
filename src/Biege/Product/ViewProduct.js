@@ -1,4 +1,3 @@
-
 import React, {
   useCallback,
   useEffect,
@@ -11,11 +10,39 @@ import { makeApiRequest } from "../../AxiosServices/apiCall";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
-import {
-  faPenToSquare,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+// ================= TAILWIND CLASS HELPERS =================
+
+const disabledCls = "disabled:cursor-not-allowed disabled:opacity-50";
+
+// header buttons
+const btnPrimary = `rounded-md bg-[#e98d9d] px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#d97589] ${disabledCls}`;
+const btnGhost = `rounded-md border border-[#e3c8cc] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#8c3d4e] transition hover:border-[#e98d9d] hover:bg-[#faf2f3] ${disabledCls}`;
+
+// bulk action buttons (small)
+const btnActivate = `rounded-md bg-[#23965e] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#1d7d4e] ${disabledCls}`;
+const btnArchive = `rounded-md bg-[#73788b] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#5f6475] ${disabledCls}`;
+const btnChangeCat = `rounded-md border border-[#e98d9d] bg-white px-3.5 py-2 text-xs font-semibold text-[#c25b70] transition hover:bg-[#e98d9d] hover:text-white ${disabledCls}`;
+const btnExportSel = `rounded-md border border-[#23965e] bg-white px-3.5 py-2 text-xs font-semibold text-[#23965e] transition hover:bg-[#23965e] hover:text-white ${disabledCls}`;
+const btnExportAll = `rounded-md border border-[#3d4654] bg-white px-3.5 py-2 text-xs font-semibold text-[#3d4654] transition hover:bg-[#3d4654] hover:text-white ${disabledCls}`;
+
+// inputs
+const fieldClass =
+  "rounded-md border border-[#e3c8cc] bg-white px-3 py-2 text-[13px] text-[#26334a] outline-none transition focus:border-[#e98d9d] focus:ring-4 focus:ring-[#e98d9d]/30 disabled:cursor-not-allowed disabled:opacity-60";
+
+// badges
+const typeBadge = {
+  SKIN_CARE: "bg-[#e1f4fb] text-[#218cac]",
+  BEAUTY: "bg-[#f0e9ff] text-[#7953c7]",
+};
+
+const statusBadge = {
+  ACTIVE: "bg-[#e3f2e8] text-[#2f6b46]",
+  DRAFT: "bg-[#fff3dc] text-[#b7791f]",
+  ARCHIVED: "bg-[#eeeef3] text-[#5f6475]",
+};
 
 function ViewProduct() {
   const [products, setProducts] = useState([]);
@@ -61,9 +88,7 @@ function ViewProduct() {
     } catch (err) {
       console.error("Get categories error:", err);
       setCategories([]);
-      toast.error(
-        err.response?.data?.message || "Failed to fetch categories"
-      );
+      toast.error(err.response?.data?.message || "Failed to fetch categories");
     }
   }, []);
 
@@ -177,18 +202,14 @@ function ViewProduct() {
         });
 
         if (response.status) {
-          toast.success(
-            response.message || "Product deleted successfully"
-          );
+          toast.success(response.message || "Product deleted successfully");
           getProducts();
         } else {
           toast.error(response.message || "Failed to delete product");
         }
       } catch (err) {
         console.error("Delete product error:", err);
-        toast.error(
-          err.response?.data?.message || "Something went wrong"
-        );
+        toast.error(err.response?.data?.message || "Something went wrong");
       }
     },
     [getProducts]
@@ -208,30 +229,15 @@ function ViewProduct() {
         product.sku?.toLowerCase().includes(value) ||
         categoryName?.toLowerCase().includes(value);
 
-      const matchesStatus =
-        !statusFilter || product.status === statusFilter;
+      const matchesStatus = !statusFilter || product.status === statusFilter;
 
-      const matchesType =
-        !typeFilter || product.type === typeFilter;
+      const matchesType = !typeFilter || product.type === typeFilter;
 
-      const matchesCategory =
-        !categoryFilter || categoryId === categoryFilter;
+      const matchesCategory = !categoryFilter || categoryId === categoryFilter;
 
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesType &&
-        matchesCategory
-      );
+      return matchesSearch && matchesStatus && matchesType && matchesCategory;
     });
-  }, [
-    products,
-    search,
-    statusFilter,
-    typeFilter,
-    categoryFilter,
-    categories,
-  ]);
+  }, [products, search, statusFilter, typeFilter, categoryFilter, categories]);
 
   // SELECTED PRODUCT IDS
   const selectedIds = useMemo(
@@ -269,18 +275,14 @@ function ViewProduct() {
       });
 
       if (response.status) {
-        toast.success(
-          response.message || "Products updated successfully"
-        );
+        toast.success(response.message || "Products updated successfully");
         await getProducts();
       } else {
         toast.error(response.message || "Bulk update failed");
       }
     } catch (err) {
       console.error("Bulk status error:", err);
-      toast.error(
-        err.response?.data?.message || "Bulk update failed"
-      );
+      toast.error(err.response?.data?.message || "Bulk update failed");
     } finally {
       setBulkLoading(false);
     }
@@ -311,9 +313,7 @@ function ViewProduct() {
       });
 
       if (response.status) {
-        toast.success(
-          response.message || "Category updated successfully"
-        );
+        toast.success(response.message || "Category updated successfully");
         setBulkCategoryId("");
         await getProducts();
       } else {
@@ -321,9 +321,7 @@ function ViewProduct() {
       }
     } catch (err) {
       console.error("Bulk category error:", err);
-      toast.error(
-        err.response?.data?.message || "Category update failed"
-      );
+      toast.error(err.response?.data?.message || "Category update failed");
     } finally {
       setBulkLoading(false);
     }
@@ -451,18 +449,14 @@ function ViewProduct() {
           normalized[key.trim().toLowerCase()] = row[key];
         });
 
-        const enteredCategory = String(
-          normalized.category ?? ""
-        ).trim();
+        const enteredCategory = String(normalized.category ?? "").trim();
 
         const matchedCategory = findCategory(enteredCategory);
 
         return {
           name: String(normalized.name ?? "").trim(),
           sku: String(normalized.sku ?? "").trim().toUpperCase(),
-          category: matchedCategory
-            ? matchedCategory._id
-            : enteredCategory,
+          category: matchedCategory ? matchedCategory._id : enteredCategory,
           type: String(normalized.type ?? "").trim().toUpperCase(),
           price: String(normalized.price ?? "").trim(),
           stock: String(normalized.stock ?? "").trim(),
@@ -562,9 +556,7 @@ function ViewProduct() {
     }
 
     if (importErrors.length) {
-      toast.warning(
-        "Please correct the validation errors before importing"
-      );
+      toast.warning("Please correct the validation errors before importing");
       return;
     }
 
@@ -582,9 +574,7 @@ function ViewProduct() {
       if (response.status) {
         setImportResult(response.data);
 
-        toast.success(
-          `${response.data?.importedCount || 0} product(s) imported`
-        );
+        toast.success(`${response.data?.importedCount || 0} product(s) imported`);
 
         await getProducts();
       } else {
@@ -605,7 +595,7 @@ function ViewProduct() {
         name: "S.NO",
         width: "75px",
         cell: (row, index) => (
-          <span className="fw-semibold">{index + 1}</span>
+          <span className="font-semibold text-[#26334a]">{index + 1}</span>
         ),
       },
       {
@@ -617,14 +607,7 @@ function ViewProduct() {
               <img
                 src={row.image}
                 alt={row.name || "Product"}
-                width="55"
-                height="55"
-                style={{
-                  objectFit: "cover",
-                  borderRadius: "8px",
-                  border: "1px solid #eee",
-                  cursor: "pointer",
-                }}
+                className="h-[55px] w-[55px] cursor-pointer rounded-lg border border-[#edf0f5] object-cover transition hover:scale-105"
                 onClick={() => {
                   setSelectedImage(row.image);
                   setShowImageModal(true);
@@ -634,7 +617,7 @@ function ViewProduct() {
                 }}
               />
             ) : (
-              <span className="text-muted small">No Image</span>
+              <span className="text-xs text-[#8791a5]">No Image</span>
             )}
           </div>
         ),
@@ -645,7 +628,7 @@ function ViewProduct() {
         sortable: true,
         minWidth: "180px",
         cell: (row) => (
-          <span className="fw-semibold text-dark">{row.name}</span>
+          <span className="font-semibold text-[#26334a]">{row.name}</span>
         ),
       },
       {
@@ -653,22 +636,29 @@ function ViewProduct() {
         selector: (row) => row.sku,
         sortable: true,
         minWidth: "120px",
+        cell: (row) => (
+          <span className="rounded border border-[#e3c8cc] bg-[#faf2f3] px-2 py-0.5 font-mono text-xs text-[#8c3d4e]">
+            {row.sku}
+          </span>
+        ),
       },
       {
         name: "CATEGORY",
         selector: (row) => getCategoryName(row.category),
         sortable: true,
         minWidth: "150px",
-        cell: (row) => (
-          <span>{getCategoryLabel(row.category)}</span>
-        ),
+        cell: (row) => <span>{getCategoryLabel(row.category)}</span>,
       },
       {
         name: "TYPE",
         selector: (row) => row.type,
         sortable: true,
         cell: (row) => (
-          <span className="badge bg-info-subtle text-info px-3 py-2">
+          <span
+            className={`rounded-full px-3 py-1.5 text-[11px] font-bold ${
+              typeBadge[row.type] || "bg-[#eeeef3] text-[#5f6475]"
+            }`}
+          >
             {row.type === "SKIN_CARE" ? "Skin Care" : "Beauty"}
           </span>
         ),
@@ -678,7 +668,7 @@ function ViewProduct() {
         selector: (row) => row.price,
         sortable: true,
         cell: (row) => (
-          <span className="fw-semibold">
+          <span className="font-semibold text-[#26334a]">
             ₹{Number(row.price).toLocaleString("en-IN")}
           </span>
         ),
@@ -690,9 +680,7 @@ function ViewProduct() {
         cell: (row) => (
           <span
             className={
-              row.stock === 0
-                ? "text-danger fw-semibold"
-                : "text-dark"
+              row.stock === 0 ? "font-semibold text-red-600" : "text-[#26334a]"
             }
           >
             {row.stock}
@@ -703,59 +691,29 @@ function ViewProduct() {
         name: "STATUS",
         selector: (row) => row.status,
         sortable: true,
-        cell: (row) => {
-          const statusClass = {
-            ACTIVE: "bg-success-subtle text-success",
-            DRAFT: "bg-warning-subtle text-warning",
-            ARCHIVED: "bg-secondary-subtle text-secondary",
-          };
-
-          return (
-            <span
-              className={`badge px-3 py-2 ${statusClass[row.status] || "bg-light text-dark"
-                }`}
-            >
-              {row.status}
-            </span>
-          );
-        },
+        cell: (row) => (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide ${
+              statusBadge[row.status] || "bg-[#eeeef3] text-[#26334a]"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {row.status}
+          </span>
+        ),
       },
       {
         name: "ACTION",
-        width: "180px",
-        minWidth: "180px",
+        width: "140px",
+        minWidth: "140px",
         button: true,
         cell: (row) => (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "12px",
-              width: "100%",
-              minWidth: "150px",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <div className="flex w-full items-center justify-center gap-2.5 whitespace-nowrap">
             <button
               type="button"
               title="Edit Product"
-              onClick={() =>
-                navigate(`/edit-product/${row._id}/basic`)
-              }
-              style={{
-                width: "38px",
-                height: "38px",
-                minWidth: "38px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid #0d6efd",
-                borderRadius: "6px",
-                background: "#fff",
-                color: "#0d6efd",
-                cursor: "pointer",
-              }}
+              onClick={() => navigate(`/edit-product/${row._id}/basic`)}
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-md border border-[#e98d9d] bg-white text-[#e98d9d] transition hover:bg-[#e98d9d] hover:text-white"
             >
               <FontAwesomeIcon icon={faPenToSquare} />
             </button>
@@ -764,19 +722,7 @@ function ViewProduct() {
               type="button"
               title="Delete Product"
               onClick={() => handleDelete(row._id)}
-              style={{
-                width: "38px",
-                height: "38px",
-                minWidth: "38px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid #dc3545",
-                borderRadius: "6px",
-                background: "#fff",
-                color: "#dc3545",
-                cursor: "pointer",
-              }}
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-md border border-red-300 bg-white text-red-600 transition hover:bg-red-600 hover:text-white"
             >
               <FontAwesomeIcon icon={faTrash} />
             </button>
@@ -790,28 +736,39 @@ function ViewProduct() {
   const customStyles = {
     headRow: {
       style: {
-        backgroundColor: "#f8f9fa",
-        minHeight: "55px",
-        borderBottom: "1px solid #dee2e6",
+        backgroundColor: "#e3c8cc",
+        minHeight: "52px",
+        borderBottom: "none",
+        borderTopLeftRadius: "10px",
+        borderTopRightRadius: "10px",
       },
     },
     headCells: {
       style: {
-        fontSize: "12px",
+        fontSize: "11px",
         fontWeight: "700",
-        color: "#555",
+        letterSpacing: "0.08em",
+        color: "#8c3d4e",
         paddingLeft: "16px",
         paddingRight: "16px",
       },
     },
     rows: {
       style: {
-        minHeight: "75px",
+        minHeight: "72px",
         fontSize: "13px",
-        color: "#444",
+        color: "#26334a",
+        borderBottomColor: "#edf0f5",
+      },
+      stripedStyle: {
+        backgroundColor: "#fdf8f9",
+        color: "#26334a",
       },
       highlightOnHoverStyle: {
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "#faf2f3",
+        color: "#26334a",
+        borderBottomColor: "#edf0f5",
+        outline: "none",
         transition: "0.2s",
       },
     },
@@ -824,49 +781,50 @@ function ViewProduct() {
     },
     pagination: {
       style: {
-        borderTop: "1px solid #dee2e6",
+        borderTop: "1px solid #edf0f5",
         minHeight: "60px",
+        color: "#8791a5",
       },
     },
   };
 
+  const hasFilters = search || statusFilter || typeFilter || categoryFilter;
+
   return (
-    <div className="container-fluid py-4">
+    <div className="min-h-screen bg-[#f6f7fb] p-4 sm:p-7">
       {/* PAGE HEADER */}
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h4 className="fw-bold mb-1">Products</h4>
-          <p className="text-muted mb-0 small">
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+            Products
+          </h3>
+          <p className="text-sm text-[#8791a5]">
             Manage your skincare and beauty products
           </p>
         </div>
 
-        <div className="d-flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5">
           <button
             type="button"
-            className="btn btn-outline-primary px-3"
+            className={btnGhost}
             onClick={handleRefresh}
             disabled={loading}
           >
-            <i className="fa-solid fa-rotate me-2"></i>
+            <i className="fa-solid fa-rotate mr-2"></i>
             Refresh
           </button>
 
-          <button
-            type="button"
-            className="btn btn-outline-success px-3"
-            onClick={downloadTemplate}
-          >
-            <i className="fa-solid fa-download me-2"></i>
+          <button type="button" className={btnGhost} onClick={downloadTemplate}>
+            <i className="fa-solid fa-download mr-2"></i>
             CSV Template
           </button>
 
           <button
             type="button"
-            className="btn btn-outline-success px-3"
+            className={btnGhost}
             onClick={() => fileInputRef.current?.click()}
           >
-            <i className="fa-solid fa-file-import me-2"></i>
+            <i className="fa-solid fa-file-import mr-2"></i>
             Import CSV / Excel
           </button>
 
@@ -874,474 +832,427 @@ function ViewProduct() {
             ref={fileInputRef}
             type="file"
             accept=".csv,.xlsx,.xls"
-            hidden
+            className="hidden"
             onChange={handleImportFile}
           />
 
           <button
             type="button"
-            className="btn btn-primary px-4"
+            className={btnPrimary}
             onClick={() => navigate("/create-product")}
           >
-            <i className="fa-solid fa-plus me-2"></i>
+            <i className="fa-solid fa-plus mr-2"></i>
             Add Product
           </button>
         </div>
       </div>
 
       {/* PRODUCT TABLE CARD */}
-      <div className="card border-0 shadow-sm">
-        <div className="card-body p-3 p-md-4">
-          {/* SEARCH AND FILTERS */}
-          <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
-            <div>
-              <h6 className="fw-bold mb-1">Product List</h6>
-              <small className="text-muted">
-                Total: {products.length} | Filtered:{" "}
-                {filteredProducts.length}
-              </small>
-            </div>
-
-            <div className="d-flex flex-wrap gap-2">
-              <div style={{ width: "230px", maxWidth: "100%" }}>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search name / SKU..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-
-              <select
-                className="form-select"
-                style={{ width: "145px" }}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="DRAFT">Draft</option>
-                <option value="ACTIVE">Active</option>
-                <option value="ARCHIVED">Archived</option>
-              </select>
-
-              <select
-                className="form-select"
-                style={{ width: "145px" }}
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="">All Types</option>
-                <option value="SKIN_CARE">Skin Care</option>
-                <option value="BEAUTY">Beauty</option>
-              </select>
-
-              <select
-                className="form-select"
-                style={{ width: "180px" }}
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category._id} value={category._id}>
-                    {getCategoryLabel(category)}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <div className="rounded-[13px] border border-[#edf0f5] bg-white p-4 shadow-[0_3px_12px_rgba(30,40,70,0.035)] md:p-6">
+        {/* SEARCH AND FILTERS */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h6 className="mb-1 text-base font-bold text-[#26334a]">
+              Product List
+            </h6>
+            <span className="text-xs text-[#8791a5]">
+              Total: {products.length} | Filtered: {filteredProducts.length}
+            </span>
           </div>
 
-          {/* BULK ACTIONS */}
-          <div className="d-flex flex-wrap align-items-center gap-2 mb-3 p-3 bg-light rounded">
-            <strong className="me-2">
-              {selectedRows.length} Selected
-            </strong>
-
-            <button
-              type="button"
-              className="btn btn-sm btn-success"
-              disabled={!selectedRows.length || bulkLoading}
-              onClick={() => handleBulkStatus("ACTIVE")}
-            >
-              Activate
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-sm btn-secondary"
-              disabled={!selectedRows.length || bulkLoading}
-              onClick={() => handleBulkStatus("ARCHIVED")}
-            >
-              Archive
-            </button>
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="text"
+              className={`${fieldClass} w-full sm:w-[230px]`}
+              placeholder="Search name / SKU..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
 
             <select
-              className="form-select form-select-sm"
-              style={{ width: "200px" }}
-              value={bulkCategoryId}
-              onChange={(e) => setBulkCategoryId(e.target.value)}
-              disabled={!categories.length || bulkLoading}
+              className={`${fieldClass} w-[145px]`}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">Select Category</option>
+              <option value="">All Status</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ACTIVE">Active</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+
+            <select
+              className={`${fieldClass} w-[145px]`}
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <option value="">All Types</option>
+              <option value="SKIN_CARE">Skin Care</option>
+              <option value="BEAUTY">Beauty</option>
+            </select>
+
+            <select
+              className={`${fieldClass} w-[180px]`}
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="">All Categories</option>
               {categories.map((category) => (
                 <option key={category._id} value={category._id}>
                   {getCategoryLabel(category)}
                 </option>
               ))}
             </select>
-
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-primary"
-              disabled={
-                !selectedRows.length ||
-                !bulkCategoryId ||
-                bulkLoading
-              }
-              onClick={handleBulkCategory}
-            >
-              Change Category
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-success"
-              disabled={!selectedRows.length}
-              onClick={handleExportSelected}
-            >
-              Export Selected CSV
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-dark"
-              disabled={!filteredProducts.length}
-              onClick={handleExportFiltered}
-            >
-              Export Filtered CSV
-            </button>
-
-            {bulkLoading && (
-              <span className="text-muted small">Updating...</span>
-            )}
           </div>
-
-          {/* ERROR */}
-          {error && (
-            <div className="alert alert-danger py-2">
-              {error}
-              <button
-                className="btn btn-sm btn-outline-danger ms-3"
-                onClick={getProducts}
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {/* DATA TABLE */}
-          <DataTable
-            columns={columns}
-            data={filteredProducts}
-            customStyles={customStyles}
-            progressPending={loading}
-            progressComponent={
-              <div className="py-5 text-center">
-                <div
-                  className="spinner-border text-primary"
-                  role="status"
-                />
-                <p className="text-muted mt-2 mb-0">
-                  Loading products...
-                </p>
-              </div>
-            }
-            selectableRows
-            selectableRowsHighlight
-            onSelectedRowsChange={({ selectedRows: rows }) =>
-              setSelectedRows(rows)
-            }
-            clearSelectedRows={loading}
-            pagination
-            paginationPerPage={10}
-            paginationRowsPerPageOptions={[10, 25, 50, 100]}
-            highlightOnHover
-            striped
-            responsive
-            persistTableHead
-            noDataComponent={
-              <div className="py-5 text-center">
-                <i className="fa-solid fa-box-open fs-2 text-muted mb-3"></i>
-                <h6 className="text-muted">
-                  {search ||
-                    statusFilter ||
-                    typeFilter ||
-                    categoryFilter
-                    ? "No matching products found"
-                    : "No products available"}
-                </h6>
-              </div>
-            }
-          />
         </div>
 
-        {/* PRODUCT IMAGE MODAL */}
-        {showImageModal && (
-          <div
-            className="modal show d-block"
-            tabIndex="-1"
-            style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-            onClick={() => setShowImageModal(false)}
+        {/* BULK ACTIONS */}
+        <div className="mb-4 flex flex-wrap items-center gap-2.5 rounded-[10px] border border-[#f1dfe2] bg-[#faf2f3] p-3.5">
+          <span className="mr-1 rounded-full bg-[#e98d9d] px-3 py-1 text-xs font-bold text-white">
+            {selectedRows.length} Selected
+          </span>
+
+          <button
+            type="button"
+            className={btnActivate}
+            disabled={!selectedRows.length || bulkLoading}
+            onClick={() => handleBulkStatus("ACTIVE")}
           >
-            <div
-              className="modal-dialog modal-dialog-centered modal-lg"
-              onClick={(e) => e.stopPropagation()}
+            <i className="fa-solid fa-circle-check mr-1.5"></i>
+            Activate
+          </button>
+
+          <button
+            type="button"
+            className={btnArchive}
+            disabled={!selectedRows.length || bulkLoading}
+            onClick={() => handleBulkStatus("ARCHIVED")}
+          >
+            <i className="fa-solid fa-box-archive mr-1.5"></i>
+            Archive
+          </button>
+
+          <select
+            className={`${fieldClass} w-[200px] !py-[7px] text-xs`}
+            value={bulkCategoryId}
+            onChange={(e) => setBulkCategoryId(e.target.value)}
+            disabled={!categories.length || bulkLoading}
+          >
+            <option value="">Select Category</option>
+            {categories.map((category) => (
+              <option key={category._id} value={category._id}>
+                {getCategoryLabel(category)}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            className={btnChangeCat}
+            disabled={!selectedRows.length || !bulkCategoryId || bulkLoading}
+            onClick={handleBulkCategory}
+          >
+            Change Category
+          </button>
+
+          <span className="mx-1 hidden h-6 w-px bg-[#e3c8cc] md:block" />
+
+          <button
+            type="button"
+            className={btnExportSel}
+            disabled={!selectedRows.length}
+            onClick={handleExportSelected}
+          >
+            <i className="fa-solid fa-file-csv mr-1.5"></i>
+            Export Selected CSV
+          </button>
+
+          <button
+            type="button"
+            className={btnExportAll}
+            disabled={!filteredProducts.length}
+            onClick={handleExportFiltered}
+          >
+            <i className="fa-solid fa-file-export mr-1.5"></i>
+            Export Filtered CSV
+          </button>
+
+          {bulkLoading && (
+            <span className="text-xs text-[#8791a5]">Updating...</span>
+          )}
+        </div>
+
+        {/* ERROR */}
+        {error && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+            {error}
+            <button
+              type="button"
+              className="rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-600 hover:text-white"
+              onClick={getProducts}
             >
-              <div className="modal-content border-0">
-                <div className="modal-header">
-                  <h5 className="modal-title">Product Image</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setShowImageModal(false)}
-                  ></button>
-                </div>
-
-                <div className="modal-body text-center p-3">
-                  <img
-                    src={selectedImage}
-                    alt="Product"
-                    style={{
-                      maxWidth: "100%",
-                      maxHeight: "70vh",
-                      objectFit: "contain",
-                      borderRadius: "8px",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+              Retry
+            </button>
           </div>
         )}
 
-        {/* IMPORT PREVIEW MODAL */}
-        {showImportModal && (
-          <div
-            className="modal show d-block"
-            tabIndex="-1"
-            style={{
-              backgroundColor: "rgba(0,0,0,0.6)",
-              overflowY: "auto",
-            }}
-          >
-            <div className="modal-dialog modal-dialog-centered modal-lg">
-              <div className="modal-content border-0">
-                <div className="modal-header">
-                  <h5 className="modal-title">Import Products</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    disabled={importLoading}
-                    onClick={() => setShowImportModal(false)}
-                  ></button>
-                </div>
-
-                <div className="modal-body">
-                  {!importResult ? (
-                    <>
-                      <div className="alert alert-info">
-                        File contains {importRows.length} product row(s).
-                        Review validation errors before importing.
-                      </div>
-
-                      <div className="row g-2 mb-3">
-                        <div className="col-md-6">
-                          <div className="border rounded p-3">
-                            <small className="text-muted">
-                              Total rows
-                            </small>
-                            <h4 className="mb-0">
-                              {importRows.length}
-                            </h4>
-                          </div>
-                        </div>
-
-                        <div className="col-md-6">
-                          <div className="border rounded p-3">
-                            <small className="text-muted">
-                              Preview errors
-                            </small>
-                            <h4 className="mb-0 text-danger">
-                              {importErrors.length}
-                            </h4>
-                          </div>
-                        </div>
-                      </div>
-
-                      {importErrors.length > 0 && (
-                        <div className="alert alert-warning">
-                          <strong>Rows with validation errors:</strong>
-                          <div
-                            style={{
-                              maxHeight: "180px",
-                              overflowY: "auto",
-                              marginTop: "8px",
-                            }}
-                          >
-                            {importErrors.map((item, index) => (
-                              <div
-                                key={index}
-                                className="small mb-1"
-                              >
-                                Row {item.row} (
-                                {item.sku || "No SKU"}): {item.message}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="table-responsive">
-                        <table className="table table-sm table-bordered">
-                          <thead className="table-light">
-                            <tr>
-                              <th>Name</th>
-                              <th>SKU</th>
-                              <th>Category</th>
-                              <th>Type</th>
-                              <th>Price</th>
-                              <th>Stock</th>
-                              <th>Status</th>
-                            </tr>
-                          </thead>
-
-                          <tbody>
-                            {importRows.slice(0, 10).map((row, index) => (
-                              <tr key={index}>
-                                <td>{row.name}</td>
-                                <td>{row.sku}</td>
-                                <td>
-                                  {getCategoryName(row.category) ||
-                                    row.category}
-                                </td>
-                                <td>{row.type}</td>
-                                <td>{row.price}</td>
-                                <td>{row.stock}</td>
-                                <td>{row.status}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {importRows.length > 10 && (
-                        <small className="text-muted">
-                          Showing first 10 rows of {importRows.length}.
-                        </small>
-                      )}
-
-                      <small className="text-muted d-block mt-2">
-                        Category must match an active category name,
-                        slug, or ID. Backend will also check existing
-                        SKU duplicates.
-                      </small>
-                    </>
-                  ) : (
-                    <>
-                      <div className="alert alert-success">
-                        Import process completed.
-                      </div>
-
-                      <div className="row g-2 mb-3">
-                        <div className="col-md-4">
-                          <div className="border rounded p-3">
-                            <small className="text-muted">
-                              Total rows
-                            </small>
-                            <h4>{importResult.totalRows}</h4>
-                          </div>
-                        </div>
-
-                        <div className="col-md-4">
-                          <div className="border rounded p-3">
-                            <small className="text-muted">
-                              Imported
-                            </small>
-                            <h4 className="text-success">
-                              {importResult.importedCount}
-                            </h4>
-                          </div>
-                        </div>
-
-                        <div className="col-md-4">
-                          <div className="border rounded p-3">
-                            <small className="text-muted">
-                              Failed
-                            </small>
-                            <h4 className="text-danger">
-                              {importResult.failedCount}
-                            </h4>
-                          </div>
-                        </div>
-                      </div>
-
-                      {importResult.errors?.length > 0 && (
-                        <div className="alert alert-warning">
-                          <strong>Import errors:</strong>
-                          <div
-                            style={{
-                              maxHeight: "200px",
-                              overflowY: "auto",
-                              marginTop: "8px",
-                            }}
-                          >
-                            {importResult.errors.map((item, index) => (
-                              <div
-                                key={index}
-                                className="small mb-1"
-                              >
-                                Row {item.row} (
-                                {item.sku || "No SKU"}): {item.message}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    disabled={importLoading}
-                    onClick={() => setShowImportModal(false)}
-                  >
-                    Close
-                  </button>
-
-                  {!importResult && (
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      disabled={
-                        importLoading ||
-                        !importRows.length ||
-                        importErrors.length > 0
-                      }
-                      onClick={confirmImport}
-                    >
-                      {importLoading ? "Importing..." : "Confirm Import"}
-                    </button>
-                  )}
-                </div>
-              </div>
+        {/* DATA TABLE */}
+        <DataTable
+          columns={columns}
+          data={filteredProducts}
+          customStyles={customStyles}
+          progressPending={loading}
+          progressComponent={
+            <div className="py-12 text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#e3c8cc] border-t-[#e98d9d]" />
+              <p className="mt-3 text-sm text-[#8791a5]">Loading products...</p>
             </div>
-          </div>
-        )}
+          }
+          selectableRows
+          selectableRowsHighlight
+          onSelectedRowsChange={({ selectedRows: rows }) =>
+            setSelectedRows(rows)
+          }
+          clearSelectedRows={loading}
+          pagination
+          paginationPerPage={10}
+          paginationRowsPerPageOptions={[10, 25, 50, 100]}
+          highlightOnHover
+          striped
+          responsive
+          persistTableHead
+          noDataComponent={
+            <div className="py-12 text-center">
+              <i className="fa-solid fa-box-open mb-3 text-3xl text-[#e3c8cc]"></i>
+              <h6 className="text-base font-semibold text-[#8791a5]">
+                {hasFilters
+                  ? "No matching products found"
+                  : "No products available"}
+              </h6>
+            </div>
+          }
+        />
       </div>
+
+      {/* PRODUCT IMAGE MODAL */}
+      {showImageModal && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div
+            className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between bg-[#e3c8cc] px-6 py-4">
+              <h5 className="text-lg font-bold text-[#26334a]">
+                Product Image
+              </h5>
+
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowImageModal(false)}
+                className="h-8 w-8 rounded-full bg-white text-sm text-[#8c3d4e] transition hover:bg-[#e98d9d] hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 text-center">
+              <img
+                src={selectedImage}
+                alt="Product"
+                className="mx-auto max-h-[70vh] max-w-full rounded-lg object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT PREVIEW MODAL */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-10">
+          <div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-[#e3c8cc] px-6 py-4">
+              <h5 className="text-lg font-bold text-[#26334a]">
+                Import Products
+              </h5>
+
+              <button
+                type="button"
+                aria-label="Close"
+                disabled={importLoading}
+                onClick={() => setShowImportModal(false)}
+                className="h-8 w-8 rounded-full bg-white text-sm text-[#8c3d4e] transition hover:bg-[#e98d9d] hover:text-white disabled:opacity-50"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6">
+              {!importResult ? (
+                <>
+                  <div className="mb-4 rounded-lg border border-[#bfe3f2] bg-[#e1f4fb] px-4 py-3 text-sm text-[#1a6e88]">
+                    File contains {importRows.length} product row(s). Review
+                    validation errors before importing.
+                  </div>
+
+                  <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-[10px] border border-[#edf0f5] p-4">
+                      <span className="text-xs text-[#8791a5]">Total rows</span>
+                      <h4 className="text-2xl font-bold text-[#26334a]">
+                        {importRows.length}
+                      </h4>
+                    </div>
+
+                    <div className="rounded-[10px] border border-[#edf0f5] p-4">
+                      <span className="text-xs text-[#8791a5]">
+                        Preview errors
+                      </span>
+                      <h4 className="text-2xl font-bold text-red-600">
+                        {importErrors.length}
+                      </h4>
+                    </div>
+                  </div>
+
+                  {importErrors.length > 0 && (
+                    <div className="mb-4 rounded-lg border border-[#f3d9a4] bg-[#fff3dc] px-4 py-3 text-sm text-[#8a5a12]">
+                      <strong>Rows with validation errors:</strong>
+                      <div className="mt-2 max-h-[180px] overflow-y-auto">
+                        {importErrors.map((item, index) => (
+                          <div key={index} className="mb-1 text-xs">
+                            Row {item.row} ({item.sku || "No SKU"}):{" "}
+                            {item.message}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="overflow-x-auto rounded-[10px] border border-[#edf0f5]">
+                    <table className="w-full min-w-[560px] border-collapse text-[13px]">
+                      <thead className="bg-[#faf2f3]">
+                        <tr>
+                          {[
+                            "Name",
+                            "SKU",
+                            "Category",
+                            "Type",
+                            "Price",
+                            "Stock",
+                            "Status",
+                          ].map((heading) => (
+                            <th
+                              key={heading}
+                              className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#8c3d4e]"
+                            >
+                              {heading}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {importRows.slice(0, 10).map((row, index) => (
+                          <tr key={index} className="border-t border-[#edf0f5]">
+                            <td className="px-3 py-2.5">{row.name}</td>
+                            <td className="px-3 py-2.5">{row.sku}</td>
+                            <td className="px-3 py-2.5">
+                              {getCategoryName(row.category) || row.category}
+                            </td>
+                            <td className="px-3 py-2.5">{row.type}</td>
+                            <td className="px-3 py-2.5">{row.price}</td>
+                            <td className="px-3 py-2.5">{row.stock}</td>
+                            <td className="px-3 py-2.5">{row.status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {importRows.length > 10 && (
+                    <span className="mt-2 block text-xs text-[#8791a5]">
+                      Showing first 10 rows of {importRows.length}.
+                    </span>
+                  )}
+
+                  <span className="mt-2 block text-xs text-[#8791a5]">
+                    Category must match an active category name, slug, or ID.
+                    Backend will also check existing SKU duplicates.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div className="mb-4 rounded-lg border border-[#bfe6cf] bg-[#e4f7ed] px-4 py-3 text-sm text-[#1d6b45]">
+                    Import process completed.
+                  </div>
+
+                  <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-[10px] border border-[#edf0f5] p-4">
+                      <span className="text-xs text-[#8791a5]">Total rows</span>
+                      <h4 className="text-2xl font-bold text-[#26334a]">
+                        {importResult.totalRows}
+                      </h4>
+                    </div>
+
+                    <div className="rounded-[10px] border border-[#edf0f5] p-4">
+                      <span className="text-xs text-[#8791a5]">Imported</span>
+                      <h4 className="text-2xl font-bold text-[#23965e]">
+                        {importResult.importedCount}
+                      </h4>
+                    </div>
+
+                    <div className="rounded-[10px] border border-[#edf0f5] p-4">
+                      <span className="text-xs text-[#8791a5]">Failed</span>
+                      <h4 className="text-2xl font-bold text-red-600">
+                        {importResult.failedCount}
+                      </h4>
+                    </div>
+                  </div>
+
+                  {importResult.errors?.length > 0 && (
+                    <div className="rounded-lg border border-[#f3d9a4] bg-[#fff3dc] px-4 py-3 text-sm text-[#8a5a12]">
+                      <strong>Import errors:</strong>
+                      <div className="mt-2 max-h-[200px] overflow-y-auto">
+                        {importResult.errors.map((item, index) => (
+                          <div key={index} className="mb-1 text-xs">
+                            Row {item.row} ({item.sku || "No SKU"}):{" "}
+                            {item.message}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-[#edf0f5] bg-[#faf2f3] px-6 py-4">
+              <button
+                type="button"
+                className={btnGhost}
+                disabled={importLoading}
+                onClick={() => setShowImportModal(false)}
+              >
+                Close
+              </button>
+
+              {!importResult && (
+                <button
+                  type="button"
+                  className={btnPrimary}
+                  disabled={
+                    importLoading || !importRows.length || importErrors.length > 0
+                  }
+                  onClick={confirmImport}
+                >
+                  {importLoading ? "Importing..." : "Confirm Import"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

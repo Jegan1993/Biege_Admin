@@ -1,4 +1,3 @@
-
 import React, {
   useCallback,
   useEffect,
@@ -11,6 +10,7 @@ import { makeApiRequest } from "../../AxiosServices/apiCall";
 import StockAdjustmentModal from "./StockAdjustmentModal";
 import StockAdjustmentLog from "./StockAdjustmentLog";
 import { useNavigate } from "react-router-dom";
+
 const initialReceiveValues = {
   productId: "",
   variantId: "",
@@ -22,54 +22,121 @@ const initialReceiveValues = {
   expiryDate: "",
   notes: "",
 };
+
+/* Theme colours (used by the DataTable customStyles, which can't take classes) */
+const theme = {
+  headBg: "#e8cdd1",
+  headText: "#8c2f3f",
+  navy: "#1f2a4a",
+  muted: "#7f8ba5",
+  border: "#e9ebf3",
+};
+
+/* Reusable Tailwind class strings */
+const inputCls =
+  "w-full rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 py-2.5 text-sm text-[#1f2a4a] outline-none transition placeholder:text-[#a9b2c7] focus:border-[#e98a9b] focus:bg-white focus:ring-4 focus:ring-[#e98a9b]/20 disabled:cursor-not-allowed disabled:bg-[#eef0f6] disabled:text-[#7f8ba5]";
+const labelCls = "mb-1.5 block text-[13px] font-semibold text-[#1f2a4a]";
+const btnBase =
+  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[10px] px-[18px] py-[9px] text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60";
+const btnPrimary = `${btnBase} bg-[#e98a9b] text-white shadow-[0_6px_14px_rgba(233,138,155,0.3)] hover:bg-[#d9748a]`;
+const btnOutline = `${btnBase} border border-[#e9ebf3] bg-white text-[#8c2f3f] hover:border-[#e98a9b] hover:bg-[#fbeef0]`;
+const btnSoft = `${btnBase} border border-[#e8cdd1] bg-[#e8cdd1] text-[#8c2f3f] hover:bg-[#dfbcc2]`;
+const actBase =
+  "inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition";
+
+const statusColors = {
+  IN_STOCK: "bg-[#e1f6ea] text-[#1f9d62]",
+  LOW_STOCK: "bg-[#fff3d6] text-[#b7791f]",
+  OUT_OF_STOCK: "bg-[#fdeaea] text-[#d64550]",
+};
+
+// STATUS BADGE
+const renderStatus = (value) => (
+  <span
+    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold tracking-wide ${
+      statusColors[value] || "bg-[#eef0f6] text-[#7f8ba5]"
+    }`}
+  >
+    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+    {value?.replaceAll("_", " ") || "N/A"}
+  </span>
+);
+
 const tableCustomStyles = {
-  table: {
-    style: { backgroundColor: "#ffffff" },
-  },
+  table: { style: { backgroundColor: "#ffffff" } },
   headRow: {
     style: {
-      backgroundColor: "#f8f9fa",
-      borderBottom: "1px solid #dee2e6",
+      backgroundColor: theme.headBg,
+      borderBottom: "none",
       minHeight: "50px",
     },
   },
   headCells: {
     style: {
-      fontSize: "13px",
-      fontWeight: "600",
-      color: "#343a40",
-      paddingLeft: "12px",
-      paddingRight: "12px",
+      fontSize: "12px",
+      fontWeight: "700",
+      letterSpacing: "0.05em",
+      textTransform: "uppercase",
+      color: theme.headText,
+      paddingLeft: "14px",
+      paddingRight: "14px",
     },
   },
   rows: {
     style: {
-      minHeight: "65px",
+      minHeight: "68px",
       fontSize: "13px",
-      color: "#495057",
+      color: theme.navy,
       "&:not(:last-of-type)": {
-        borderBottom: "1px solid #eeeeee",
+        borderBottom: `1px solid ${theme.border}`,
       },
     },
     highlightOnHoverStyle: {
-      backgroundColor: "#f8f9fa",
-      transition: "0.2s",
+      backgroundColor: "#fdf6f7",
+      transitionDuration: "0.15s",
+      outline: "none",
     },
   },
   cells: {
-    style: {
-      paddingLeft: "12px",
-      paddingRight: "12px",
-    },
+    style: { paddingLeft: "14px", paddingRight: "14px" },
   },
   pagination: {
     style: {
-      borderTop: "1px solid #dee2e6",
-      minHeight: "55px",
+      borderTop: `1px solid ${theme.border}`,
+      minHeight: "58px",
       fontSize: "13px",
+      color: theme.muted,
     },
   },
 };
+
+/* Small Tailwind modal shell used by the three modals below */
+function Modal({ title, onClose, disabled, size = "max-w-lg", children, footer }) {
+  return (
+    <div className="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto bg-[#1f2a4a]/45 p-4">
+      <div
+        className={`w-full ${size} overflow-hidden rounded-2xl bg-white shadow-[0_20px_50px_rgba(31,42,74,0.2)]`}
+      >
+        <div className="flex items-center justify-between bg-[#e8cdd1] px-6 py-[18px]">
+          <h5 className="text-lg font-bold text-[#8c2f3f]">{title}</h5>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={disabled}
+            aria-label="Close"
+            className="cursor-pointer text-2xl leading-none text-[#8c2f3f] transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            &times;
+          </button>
+        </div>
+        <div className="max-h-[70vh] overflow-y-auto p-6">{children}</div>
+        <div className="flex justify-end gap-2.5 border-t border-[#e9ebf3] px-6 py-4">
+          {footer}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ViewInventory() {
   const [inventory, setInventory] = useState([]);
@@ -97,26 +164,17 @@ function ViewInventory() {
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [selectedAdjustmentInventory, setSelectedAdjustmentInventory] =
     useState(null);
-  useEffect(() => {
-    console.log("showAdjustmentModal changed:", showAdjustmentModal);
-  }, [showAdjustmentModal]);
-
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingInventory, setEditingInventory] = useState(null);
   const [editLowStockThreshold, setEditLowStockThreshold] = useState("");
 
-
-  const navigate = useNavigate()
-
-
+  const navigate = useNavigate();
 
   // OPEN EDIT INVENTORY MODAL
   const handleEditInventory = (row) => {
     setEditingInventory(row);
-    setEditLowStockThreshold(
-      String(row.lowStockThreshold ?? 0)
-    );
+    setEditLowStockThreshold(String(row.lowStockThreshold ?? 0));
     setShowEditModal(true);
   };
 
@@ -154,9 +212,7 @@ function ViewInventory() {
       });
 
       if (response?.status) {
-        toast.success(
-          response.message || "Inventory updated successfully"
-        );
+        toast.success(response.message || "Inventory updated successfully");
 
         setShowEditModal(false);
         setEditingInventory(null);
@@ -164,21 +220,19 @@ function ViewInventory() {
 
         await getInventory();
       } else {
-        toast.error(
-          response?.message || "Failed to update inventory"
-        );
+        toast.error(response?.message || "Failed to update inventory");
       }
     } catch (error) {
       console.error("Update inventory error:", error);
 
       toast.error(
-        error?.response?.data?.message ||
-        "Failed to update inventory"
+        error?.response?.data?.message || "Failed to update inventory"
       );
     } finally {
       setSubmitting(false);
     }
   };
+
   // GET INVENTORY
   const getInventory = useCallback(async () => {
     try {
@@ -207,8 +261,8 @@ function ViewInventory() {
         setInventory(response.data);
         setTotalRecords(
           response.pagination?.total ??
-          response.pagination?.totalRecords ??
-          response.data.length
+            response.pagination?.totalRecords ??
+            response.data.length
         );
       } else {
         setInventory([]);
@@ -273,6 +327,7 @@ function ViewInventory() {
     getWarehouses();
     getProducts();
   }, []);
+
   // DELETE INVENTORY
   const handleDeleteInventory = async (id) => {
     const confirmed = window.confirm(
@@ -290,27 +345,23 @@ function ViewInventory() {
       });
 
       if (response?.status) {
-        toast.success(
-          response.message || "Inventory deleted successfully"
-        );
+        toast.success(response.message || "Inventory deleted successfully");
 
         await getInventory();
       } else {
-        toast.error(
-          response?.message || "Failed to delete inventory"
-        );
+        toast.error(response?.message || "Failed to delete inventory");
       }
     } catch (error) {
       console.error("Delete inventory error:", error);
 
       toast.error(
-        error?.response?.data?.message ||
-        "Failed to delete inventory"
+        error?.response?.data?.message || "Failed to delete inventory"
       );
     } finally {
       setSubmitting(false);
     }
   };
+
   // GET VARIANTS BY PRODUCT
   const getVariants = async (productId) => {
     try {
@@ -474,9 +525,7 @@ function ViewInventory() {
       }
     } catch (error) {
       console.error("Receive stock error:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to receive stock"
-      );
+      toast.error(error?.response?.data?.message || "Failed to receive stock");
     } finally {
       setSubmitting(false);
     }
@@ -499,8 +548,7 @@ function ViewInventory() {
     } catch (error) {
       console.error("Inventory details error:", error);
       toast.error(
-        error?.response?.data?.message ||
-        "Failed to fetch inventory details"
+        error?.response?.data?.message || "Failed to fetch inventory details"
       );
     }
   }, []);
@@ -544,9 +592,7 @@ function ViewInventory() {
       return false;
     } catch (error) {
       console.error("Stock adjustment error:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to adjust stock"
-      );
+      toast.error(error?.response?.data?.message || "Failed to adjust stock");
       return false;
     } finally {
       setSubmitting(false);
@@ -577,124 +623,76 @@ function ViewInventory() {
     setSelectedInventory(null);
   };
 
-  // STATUS BADGE
-  const getStatusBadge = (value) => {
-    const styles = {
-      IN_STOCK: {
-        backgroundColor: "#d1e7dd",
-        color: "#0f5132",
-      },
-      LOW_STOCK: {
-        backgroundColor: "#fff3cd",
-        color: "#664d03",
-      },
-      OUT_OF_STOCK: {
-        backgroundColor: "#f8d7da",
-        color: "#842029",
-      },
-    };
-
-    return {
-      ...(styles[value] || {
-        backgroundColor: "#e9ecef",
-        color: "#495057",
-      }),
-      padding: "5px 10px",
-      borderRadius: "5px",
-      fontSize: "11px",
-      fontWeight: "600",
-      whiteSpace: "nowrap",
-      display: "inline-block",
-    };
-  };
-
   // DATATABLE COLUMNS
   const columns = useMemo(
     () => [
       {
         name: "S.No",
-        width: "65px",
+        width: "70px",
         center: true,
         cell: (row, index) => (
-          <span>{(page - 1) * limit + index + 1}</span>
+          <span className="font-semibold text-[#7f8ba5]">
+            {(page - 1) * limit + index + 1}
+          </span>
         ),
       },
       {
         name: "Product",
-        minWidth: "220px",
+        minWidth: "230px",
         selector: (row) => row.productId?.name || "N/A",
         cell: (row) => (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "8px 0",
-            }}
-          >
+          <div className="flex items-center gap-3 py-2">
             {row.productId?.image ? (
               <img
+                className="h-[42px] w-[42px] rounded-[10px] border border-[#e9ebf3] object-cover"
                 src={row.productId.image}
                 alt={row.productId.name || "Product"}
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  objectFit: "cover",
-                  borderRadius: "6px",
-                  border: "1px solid #dee2e6",
-                }}
               />
             ) : (
-              <div
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  backgroundColor: "#f1f3f5",
-                  borderRadius: "6px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#adb5bd",
-                }}
-              >
+              <div className="flex h-[42px] w-[42px] items-center justify-center rounded-[10px] bg-[#fbeef0] text-[#e98a9b]">
                 <i className="fa fa-image"></i>
               </div>
             )}
 
             <div>
-              <div style={{ fontWeight: "600", color: "#343a40" }}>
+              <div className="font-bold text-[#1f2a4a]">
                 {row.productId?.name || "N/A"}
               </div>
-              <small style={{ color: "#6c757d" }}>
+              <div className="text-[11px] text-[#7f8ba5]">
                 {row.productId?.type || ""}
-              </small>
+              </div>
             </div>
           </div>
         ),
       },
       {
         name: "SKU",
-        minWidth: "120px",
+        minWidth: "150px",
         selector: (row) => row.sku || row.variantId?.sku || "N/A",
         sortable: true,
+        cell: (row) => (
+          <span className="rounded-md bg-[#fbeef0] px-2.5 py-1 font-mono text-xs text-[#b5576a]">
+            {row.sku || row.variantId?.sku || "N/A"}
+          </span>
+        ),
       },
       {
         name: "Variant",
-        minWidth: "140px",
+        minWidth: "120px",
         selector: (row) => row.variantId?.variantName || "N/A",
       },
       {
         name: "Warehouse",
-        minWidth: "160px",
+        minWidth: "150px",
         selector: (row) => row.warehouseId?.name || "N/A",
         cell: (row) => (
           <div>
-            <div style={{ fontWeight: "500" }}>
+            <div className="font-bold text-[#1f2a4a]">
               {row.warehouseId?.name || "N/A"}
             </div>
-            <small style={{ color: "#6c757d" }}>
+            <div className="text-[11px] text-[#7f8ba5]">
               {row.warehouseId?.code || ""}
-            </small>
+            </div>
           </div>
         ),
       },
@@ -707,7 +705,7 @@ function ViewInventory() {
       },
       {
         name: "Reserved",
-        width: "100px",
+        width: "105px",
         selector: (row) => row.reserved ?? 0,
         sortable: true,
         center: true,
@@ -719,128 +717,58 @@ function ViewInventory() {
         sortable: true,
         center: true,
         cell: (row) => (
-          <strong>{row.available ?? 0}</strong>
+          <strong className="text-[#1f2a4a]">{row.available ?? 0}</strong>
         ),
       },
       {
         name: "Low Stock Limit",
-        width: "130px",
+        width: "140px",
         selector: (row) => row.lowStockThreshold ?? 0,
         center: true,
       },
       {
         name: "Status",
-        width: "130px",
+        width: "150px",
         selector: (row) => row.status || "",
-        cell: (row) => (
-          <span style={getStatusBadge(row.status)}>
-            {row.status?.replaceAll("_", " ") || "N/A"}
-          </span>
-        ),
+        cell: (row) => renderStatus(row.status),
       },
-
       {
         name: "Action",
-        minWidth: "420px",
+        minWidth: "360px",
         center: true,
         cell: (row) => (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              flexWrap: "wrap",
-              padding: "8px 0",
-            }}
-          >
-            {/* View */}
+          <div className="flex flex-wrap items-center justify-center gap-2 py-2">
             <button
               type="button"
               onClick={() => handleViewDetails(row._id)}
-              style={{
-                backgroundColor: "#0d6efd",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "5px",
-                padding: "7px 12px",
-                fontSize: "13px",
-                fontWeight: "500",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                whiteSpace: "nowrap",
-              }}
+              className={`${actBase} border border-[#e9ebf3] bg-white text-[#8c2f3f] hover:border-[#e98a9b] hover:bg-[#fbeef0]`}
             >
               <i className="fa fa-eye"></i>
               View
             </button>
 
-            {/* Adjust Stock */}
             <button
               type="button"
               onClick={() => openAdjustmentModal(row)}
-              style={{
-                backgroundColor: "#ffc107",
-                color: "#212529",
-                border: "none",
-                borderRadius: "5px",
-                padding: "7px 12px",
-                fontSize: "13px",
-                fontWeight: "500",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                whiteSpace: "nowrap",
-              }}
+              className={`${actBase} border border-[#e98a9b] bg-white text-[#d9748a] hover:bg-[#e98a9b] hover:text-white`}
             >
               <i className="fa fa-edit"></i>
               Adjust
             </button>
 
-            {/* Edit Inventory */}
             <button
               type="button"
               onClick={() => handleEditInventory(row)}
-              style={{
-                backgroundColor: "#0dcaf0",
-                color: "#000000",
-                border: "none",
-                borderRadius: "5px",
-                padding: "7px 12px",
-                fontSize: "13px",
-                fontWeight: "500",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                whiteSpace: "nowrap",
-              }}
+              className={`${actBase} border border-[#e9ebff] bg-[#e9ebff] text-[#6b73d6] hover:bg-[#d9ddff]`}
             >
               <i className="fa fa-pencil"></i>
               Edit
             </button>
 
-            {/* Delete Inventory */}
             <button
               type="button"
               onClick={() => handleDeleteInventory(row._id)}
-              style={{
-                backgroundColor: "#dc3545",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "5px",
-                padding: "7px 12px",
-                fontSize: "13px",
-                fontWeight: "500",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                whiteSpace: "nowrap",
-              }}
+              className={`${actBase} border border-[#fdeaea] bg-[#fdeaea] text-[#d64550] hover:bg-[#d64550] hover:text-white`}
             >
               <i className="fa fa-trash"></i>
               Delete
@@ -848,131 +776,113 @@ function ViewInventory() {
           </div>
         ),
       },
-
-
-
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [page, limit, handleViewDetails]
   );
 
-  return (
-    <div className="container-fluid">
+  const detailLabel = "text-[13px] font-bold text-[#1f2a4a]";
+  const detailValue = "mt-0.5 text-sm text-[#1f2a4a]";
 
+  return (
+    <div className="min-h-screen bg-[#f5f6fb] px-3.5 py-[18px] text-[#1f2a4a] md:px-8 md:py-7">
       {/* HEADER */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "12px",
-          marginBottom: "22px",
-        }}
-      >
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3.5">
         <div>
-          <h4 style={{ marginBottom: "5px" }}>
+          <h1 className="mb-1 text-[28px] font-bold text-[#e98a9b]">
             Inventory Management
-          </h4>
-          <p style={{ color: "#6c757d", marginBottom: 0 }}>
+          </h1>
+          <p className="text-sm text-[#7f8ba5]">
             Manage product stock across warehouses
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="flex flex-wrap gap-2.5">
           <button
             type="button"
-            className="btn btn-outline-secondary"
+            className={btnOutline}
             onClick={getInventory}
             disabled={loading}
           >
-            <i className="fa fa-refresh me-2"></i>
+            <i className="fa fa-refresh"></i>
             Refresh
           </button>
 
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={openReceiveModal}
-          >
-            <i className="fa fa-plus me-2"></i>
+          <button type="button" className={btnPrimary} onClick={openReceiveModal}>
+            <i className="fa fa-plus"></i>
             Receive Stock
           </button>
         </div>
       </div>
 
       {/* FILTERS */}
-      <div className="card mb-3">
-        <div className="card-body">
+      <div className="mb-4 rounded-2xl border border-[#e9ebf3] bg-white p-6 shadow-[0_4px_18px_rgba(31,42,74,0.04)]">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div className="w-full max-w-[400px]">
+            <label className={labelCls}>Search</label>
+            <input
+              type="text"
+              className={inputCls}
+              placeholder="Search product name or SKU"
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+          </div>
 
-          {/* SEARCH AND ADJUST BUTTON */}
-          <div className="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
-            <div style={{ width: "100%", maxWidth: "400px" }}>
-              <label className="form-label">Search</label>
-
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search product name or SKU"
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
-
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="btn btn-outline-primary"
+              className={btnOutline}
               onClick={() => setShowAdjustmentLog(true)}
             >
-              <i className="fa fa-history me-2"></i>
+              <i className="fa fa-history"></i>
               Adjustment Log
             </button>
 
             <button
               type="button"
-              className="btn btn-warning"
+              className={btnSoft}
               onClick={() => navigate("/expiry-management")}
             >
-              <i className="fa fa-calendar-times me-2"></i>
+              <i className="fa fa-calendar-times"></i>
               Expiry Management
             </button>
           </div>
+        </div>
 
-          {/* OTHER FILTERS */}
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label">Stock Status</label>
-              <select
-                className="form-select"
-                value={status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="IN_STOCK">In Stock</option>
-                <option value="LOW_STOCK">Low Stock</option>
-                <option value="OUT_OF_STOCK">Out of Stock</option>
-              </select>
-            </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className={labelCls}>Stock Status</label>
+            <select
+              className={inputCls}
+              value={status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="IN_STOCK">In Stock</option>
+              <option value="LOW_STOCK">Low Stock</option>
+              <option value="OUT_OF_STOCK">Out of Stock</option>
+            </select>
+          </div>
 
-            <div className="col-md-6">
-              <label className="form-label">Warehouse</label>
-              <select
-                className="form-select"
-                value={warehouseId}
-                onChange={(e) => handleWarehouseChange(e.target.value)}
-              >
-                <option value="">All Warehouses</option>
-                {warehouses.map((warehouse) => (
-                  <option key={warehouse._id} value={warehouse._id}>
-                    {warehouse.name} ({warehouse.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className={labelCls}>Warehouse</label>
+            <select
+              className={inputCls}
+              value={warehouseId}
+              onChange={(e) => handleWarehouseChange(e.target.value)}
+            >
+              <option value="">All Warehouses</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse._id} value={warehouse._id}>
+                  {warehouse.name} ({warehouse.code})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
 
-      {/* INVENTORY DATATABLE */}
       {/* INVENTORY TABLE / ADJUSTMENT LOG */}
       {showAdjustmentLog ? (
         <StockAdjustmentLog
@@ -980,351 +890,300 @@ function ViewInventory() {
           onBack={() => setShowAdjustmentLog(false)}
         />
       ) : (
-        <div className="card">
-          <div
-            className="card-header"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            <h5 className="mb-0">Inventory List</h5>
+        <div className="overflow-hidden rounded-2xl border border-[#e9ebf3] bg-white shadow-[0_4px_18px_rgba(31,42,74,0.04)]">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#e9ebf3] px-6 py-[18px]">
+            <h5 className="text-lg font-bold text-[#1f2a4a]">Inventory List</h5>
 
-            <span style={{ color: "#6c757d", fontSize: "13px" }}>
+            <span className="rounded-[10px] bg-[#e9ebff] px-3.5 py-1.5 text-xs font-bold text-[#6b73d6]">
               Total Records: {totalRecords}
             </span>
           </div>
 
-          <div className="card-body p-0">
-            <DataTable
-              columns={columns}
-              data={inventory}
-              customStyles={tableCustomStyles}
-              progressPending={loading}
-              progressComponent={
-                <div style={{ padding: "30px", color: "#6c757d" }}>
-                  Loading inventory...
-                </div>
-              }
-              noDataComponent={
-                <div style={{ padding: "30px", color: "#6c757d" }}>
-                  No inventory records found
-                </div>
-              }
-              pagination
-              paginationServer
-              paginationTotalRows={totalRecords}
-              paginationPerPage={limit}
-              paginationDefaultPage={page}
-              paginationRowsPerPageOptions={[10, 20, 50, 100]}
-              onChangePage={(newPage) => setPage(newPage)}
-              onChangeRowsPerPage={(newLimit) => {
-                setLimit(newLimit);
-                setPage(1);
-              }}
-              highlightOnHover
-              responsive
-              persistTableHead
-              striped
-            />
-          </div>
+          <DataTable
+            columns={columns}
+            data={inventory}
+            customStyles={tableCustomStyles}
+            progressPending={loading}
+            progressComponent={
+              <div className="p-[30px] text-[#7f8ba5]">Loading inventory...</div>
+            }
+            noDataComponent={
+              <div className="p-10 text-[#7f8ba5]">
+                No inventory records found
+              </div>
+            }
+            pagination
+            paginationServer
+            paginationTotalRows={totalRecords}
+            paginationPerPage={limit}
+            paginationDefaultPage={page}
+            paginationRowsPerPageOptions={[10, 20, 50, 100]}
+            onChangePage={(newPage) => setPage(newPage)}
+            onChangeRowsPerPage={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+            highlightOnHover
+            responsive
+            persistTableHead
+          />
         </div>
       )}
 
       {/* RECEIVE STOCK MODAL */}
       {showReceiveModal && (
-        <div
-          className="modal show d-block"
-          tabIndex="-1"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.5)",
-            zIndex: 1050,
-          }}
-        >
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <form onSubmit={handleReceiveStock}>
-                <div className="modal-header">
-                  <h5 className="modal-title">Receive Stock</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={closeReceiveModal}
-                    disabled={submitting}
-                  ></button>
-                </div>
+        <form onSubmit={handleReceiveStock}>
+          <Modal
+            title="Receive Stock"
+            size="max-w-3xl"
+            onClose={closeReceiveModal}
+            disabled={submitting}
+            footer={
+              <>
+                <button
+                  type="button"
+                  className={btnOutline}
+                  onClick={closeReceiveModal}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={btnPrimary}
+                  disabled={submitting}
+                >
+                  {submitting ? "Receiving..." : "Receive Stock"}
+                </button>
+              </>
+            }
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className={labelCls}>
+                  Product <span className="text-[#d64550]">*</span>
+                </label>
+                <select
+                  className={inputCls}
+                  name="productId"
+                  value={receiveValues.productId}
+                  onChange={handleReceiveChange}
+                  required
+                >
+                  <option value="">Select Product</option>
+                  {products.map((product) => (
+                    <option key={product._id} value={product._id}>
+                      {product.name} {product.sku ? `(${product.sku})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                <div className="modal-body">
-                  <div className="row g-3">
+              <div>
+                <label className={labelCls}>
+                  Variant <span className="text-[#d64550]">*</span>
+                </label>
+                <select
+                  className={inputCls}
+                  name="variantId"
+                  value={receiveValues.variantId}
+                  onChange={handleReceiveChange}
+                  required
+                  disabled={!receiveValues.productId}
+                >
+                  <option value="">Select Variant</option>
+                  {variants.map((variant) => (
+                    <option key={variant._id} value={variant._id}>
+                      {variant.variantName} ({variant.sku})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">
-                        Product <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="form-select"
-                        name="productId"
-                        value={receiveValues.productId}
-                        onChange={handleReceiveChange}
-                        required
-                      >
-                        <option value="">Select Product</option>
-                        {products.map((product) => (
-                          <option key={product._id} value={product._id}>
-                            {product.name} {product.sku ? `(${product.sku})` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              <div>
+                <label className={labelCls}>
+                  Warehouse <span className="text-[#d64550]">*</span>
+                </label>
+                <select
+                  className={inputCls}
+                  name="warehouseId"
+                  value={receiveValues.warehouseId}
+                  onChange={handleReceiveChange}
+                  required
+                >
+                  <option value="">Select Warehouse</option>
+                  {warehouses.map((warehouse) => (
+                    <option key={warehouse._id} value={warehouse._id}>
+                      {warehouse.name} ({warehouse.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">
-                        Variant <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="form-select"
-                        name="variantId"
-                        value={receiveValues.variantId}
-                        onChange={handleReceiveChange}
-                        required
-                        disabled={!receiveValues.productId}
-                      >
-                        <option value="">Select Variant</option>
-                        {variants.map((variant) => (
-                          <option key={variant._id} value={variant._id}>
-                            {variant.variantName} ({variant.sku})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              <div>
+                <label className={labelCls}>
+                  Batch Number <span className="text-[#d64550]">*</span>
+                </label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  name="batchNumber"
+                  value={receiveValues.batchNumber}
+                  onChange={handleReceiveChange}
+                  required
+                />
+              </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">
-                        Warehouse <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="form-select"
-                        name="warehouseId"
-                        value={receiveValues.warehouseId}
-                        onChange={handleReceiveChange}
-                        required
-                      >
-                        <option value="">Select Warehouse</option>
-                        {warehouses.map((warehouse) => (
-                          <option key={warehouse._id} value={warehouse._id}>
-                            {warehouse.name} ({warehouse.code})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              <div>
+                <label className={labelCls}>
+                  Received Quantity <span className="text-[#d64550]">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  className={inputCls}
+                  name="receivedQuantity"
+                  value={receiveValues.receivedQuantity}
+                  onChange={handleReceiveChange}
+                  required
+                />
+              </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">
-                        Batch Number <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="batchNumber"
-                        value={receiveValues.batchNumber}
-                        onChange={handleReceiveChange}
-                        required
-                      />
-                    </div>
+              <div>
+                <label className={labelCls}>Low Stock Threshold</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className={inputCls}
+                  name="lowStockThreshold"
+                  value={receiveValues.lowStockThreshold}
+                  onChange={handleReceiveChange}
+                />
+              </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">
-                        Received Quantity <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        className="form-control"
-                        name="receivedQuantity"
-                        value={receiveValues.receivedQuantity}
-                        onChange={handleReceiveChange}
-                        required
-                      />
-                    </div>
+              <div>
+                <label className={labelCls}>Manufacturing Date</label>
+                <input
+                  type="date"
+                  className={inputCls}
+                  name="manufacturingDate"
+                  value={receiveValues.manufacturingDate}
+                  onChange={handleReceiveChange}
+                />
+              </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">Low Stock Threshold</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        className="form-control"
-                        name="lowStockThreshold"
-                        value={receiveValues.lowStockThreshold}
-                        onChange={handleReceiveChange}
-                      />
-                    </div>
+              <div>
+                <label className={labelCls}>
+                  Expiry Date <span className="text-[#d64550]">*</span>
+                </label>
+                <input
+                  type="date"
+                  className={inputCls}
+                  name="expiryDate"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={receiveValues.expiryDate}
+                  onChange={handleReceiveChange}
+                  required
+                />
+              </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">Manufacturing Date</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        name="manufacturingDate"
-                        value={receiveValues.manufacturingDate}
-                        onChange={handleReceiveChange}
-                      />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">
-                        Expiry Date <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        name="expiryDate"
-                        min={new Date().toISOString().slice(0, 10)}
-                        value={receiveValues.expiryDate}
-                        onChange={handleReceiveChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="col-md-12">
-                      <label className="form-label">Notes</label>
-                      <textarea
-                        className="form-control"
-                        name="notes"
-                        rows="3"
-                        value={receiveValues.notes}
-                        onChange={handleReceiveChange}
-                      ></textarea>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={closeReceiveModal}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={submitting}
-                  >
-                    {submitting ? "Receiving..." : "Receive Stock"}
-                  </button>
-                </div>
-              </form>
+              <div className="md:col-span-2">
+                <label className={labelCls}>Notes</label>
+                <textarea
+                  className={inputCls}
+                  name="notes"
+                  rows="3"
+                  value={receiveValues.notes}
+                  onChange={handleReceiveChange}
+                ></textarea>
+              </div>
             </div>
-          </div>
-        </div>
+          </Modal>
+        </form>
       )}
 
       {/* INVENTORY DETAILS MODAL */}
       {showDetails && selectedInventory && (
-        <div
-          className="modal show d-block"
-          tabIndex="-1"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.5)",
-            zIndex: 1060,
-          }}
+        <Modal
+          title="Inventory Details"
+          size="max-w-3xl"
+          onClose={closeDetails}
+          footer={
+            <button type="button" className={btnOutline} onClick={closeDetails}>
+              Close
+            </button>
+          }
         >
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Inventory Details</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={closeDetails}
-                ></button>
-              </div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="col-span-2">
+              <div className={detailLabel}>Product</div>
+              <p className={detailValue}>
+                {selectedInventory.productId?.name || "N/A"}
+              </p>
+            </div>
 
-              <div className="modal-body">
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <strong>Product:</strong>
-                    <p>{selectedInventory.productId?.name || "N/A"}</p>
-                  </div>
+            <div className="col-span-2">
+              <div className={detailLabel}>SKU</div>
+              <p className={detailValue}>
+                {selectedInventory.sku ||
+                  selectedInventory.variantId?.sku ||
+                  "N/A"}
+              </p>
+            </div>
 
-                  <div className="col-md-6">
-                    <strong>SKU:</strong>
-                    <p>
-                      {selectedInventory.sku ||
-                        selectedInventory.variantId?.sku ||
-                        "N/A"}
-                    </p>
-                  </div>
+            <div className="col-span-2">
+              <div className={detailLabel}>Warehouse</div>
+              <p className={detailValue}>
+                {selectedInventory.warehouseId?.name || "N/A"}
+              </p>
+            </div>
 
-                  <div className="col-md-6">
-                    <strong>Warehouse:</strong>
-                    <p>{selectedInventory.warehouseId?.name || "N/A"}</p>
-                  </div>
+            <div className="col-span-2">
+              <div className={detailLabel}>Variant</div>
+              <p className={detailValue}>
+                {selectedInventory.variantId?.variantName || "N/A"}
+              </p>
+            </div>
 
-                  <div className="col-md-6">
-                    <strong>Variant:</strong>
-                    <p>{selectedInventory.variantId?.variantName || "N/A"}</p>
-                  </div>
+            <div>
+              <div className={detailLabel}>On Hand</div>
+              <p className={detailValue}>{selectedInventory.onHand ?? 0}</p>
+            </div>
 
-                  <div className="col-md-3">
-                    <strong>On Hand</strong>
-                    <p>{selectedInventory.onHand ?? 0}</p>
-                  </div>
+            <div>
+              <div className={detailLabel}>Reserved</div>
+              <p className={detailValue}>{selectedInventory.reserved ?? 0}</p>
+            </div>
 
-                  <div className="col-md-3">
-                    <strong>Reserved</strong>
-                    <p>{selectedInventory.reserved ?? 0}</p>
-                  </div>
+            <div>
+              <div className={detailLabel}>Available</div>
+              <p className={detailValue}>{selectedInventory.available ?? 0}</p>
+            </div>
 
-                  <div className="col-md-3">
-                    <strong>Available</strong>
-                    <p>{selectedInventory.available ?? 0}</p>
-                  </div>
+            <div>
+              <div className={detailLabel}>Low Stock Limit</div>
+              <p className={detailValue}>
+                {selectedInventory.lowStockThreshold ?? 0}
+              </p>
+            </div>
 
-                  <div className="col-md-3">
-                    <strong>Low Stock Limit</strong>
-                    <p>{selectedInventory.lowStockThreshold ?? 0}</p>
-                  </div>
+            <div className="col-span-2">
+              <div className={detailLabel}>Status</div>
+              <div className="mt-1">{renderStatus(selectedInventory.status)}</div>
+            </div>
 
-                  <div className="col-md-6">
-                    <strong>Status:</strong>
-                    <p>
-                      <span style={getStatusBadge(selectedInventory.status)}>
-                        {selectedInventory.status?.replaceAll("_", " ") || "N/A"}
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="col-md-6">
-                    <strong>Created At:</strong>
-                    <p>
-                      {selectedInventory.createdAt
-                        ? new Date(selectedInventory.createdAt).toLocaleString()
-                        : "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={closeDetails}
-                >
-                  Close
-                </button>
-              </div>
+            <div className="col-span-2">
+              <div className={detailLabel}>Created At</div>
+              <p className={detailValue}>
+                {selectedInventory.createdAt
+                  ? new Date(selectedInventory.createdAt).toLocaleString()
+                  : "N/A"}
+              </p>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {showAdjustmentModal && (
@@ -1336,129 +1195,87 @@ function ViewInventory() {
           onSubmit={handleStockAdjustment}
         />
       )}
+
       {/* EDIT INVENTORY MODAL */}
       {showEditModal && editingInventory && (
-        <div
-          className="modal show d-block"
-          tabIndex="-1"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.5)",
-            zIndex: 1070,
-          }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
+        <form onSubmit={handleUpdateInventory}>
+          <Modal
+            title="Edit Inventory"
+            onClose={closeEditModal}
+            disabled={submitting}
+            footer={
+              <>
+                <button
+                  type="button"
+                  className={btnOutline}
+                  onClick={closeEditModal}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={btnPrimary}
+                  disabled={submitting}
+                >
+                  {submitting ? "Updating..." : "Update Inventory"}
+                </button>
+              </>
+            }
+          >
+            <div className="space-y-4">
+              <div>
+                <label className={labelCls}>Product</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  value={editingInventory.productId?.name || "N/A"}
+                  disabled
+                />
+              </div>
 
-              <form onSubmit={handleUpdateInventory}>
+              <div>
+                <label className={labelCls}>SKU</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  value={
+                    editingInventory.sku ||
+                    editingInventory.variantId?.sku ||
+                    "N/A"
+                  }
+                  disabled
+                />
+              </div>
 
-                <div className="modal-header">
-                  <h5 className="modal-title">
-                    Edit Inventory
-                  </h5>
+              <div>
+                <label className={labelCls}>Warehouse</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  value={editingInventory.warehouseId?.name || "N/A"}
+                  disabled
+                />
+              </div>
 
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={closeEditModal}
-                    disabled={submitting}
-                  ></button>
-                </div>
-
-                <div className="modal-body">
-
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Product
-                    </label>
-
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={editingInventory.productId?.name || "N/A"}
-                      disabled
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">
-                      SKU
-                    </label>
-
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={
-                        editingInventory.sku ||
-                        editingInventory.variantId?.sku ||
-                        "N/A"
-                      }
-                      disabled
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Warehouse
-                    </label>
-
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={editingInventory.warehouseId?.name || "N/A"}
-                      disabled
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">
-                      Low Stock Threshold *
-                    </label>
-
-                    <input
-                      type="number"
-                      className="form-control"
-                      min="0"
-                      step="1"
-                      value={editLowStockThreshold}
-                      onChange={(e) =>
-                        setEditLowStockThreshold(e.target.value)
-                      }
-                      required
-                    />
-
-                    <small className="text-muted">
-                      Dashboard low-stock alerts use this threshold.
-                    </small>
-                  </div>
-
-                </div>
-
-                <div className="modal-footer">
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={closeEditModal}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={submitting}
-                  >
-                    {submitting ? "Updating..." : "Update Inventory"}
-                  </button>
-
-                </div>
-
-              </form>
-
+              <div>
+                <label className={labelCls}>Low Stock Threshold *</label>
+                <input
+                  type="number"
+                  className={inputCls}
+                  min="0"
+                  step="1"
+                  value={editLowStockThreshold}
+                  onChange={(e) => setEditLowStockThreshold(e.target.value)}
+                  required
+                />
+                <small className="mt-1 block text-xs text-[#7f8ba5]">
+                  Dashboard low-stock alerts use this threshold.
+                </small>
+              </div>
             </div>
-          </div>
-        </div>
+          </Modal>
+        </form>
       )}
     </div>
   );

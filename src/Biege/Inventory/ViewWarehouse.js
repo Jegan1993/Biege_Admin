@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
@@ -13,6 +12,24 @@ const initialValues = {
   status: "ACTIVE",
   isDefault: false,
 };
+
+/* Theme colours (used by the DataTable customStyles, which can't take classes) */
+const theme = {
+  headBg: "#e8cdd1",
+  headText: "#8c2f3f",
+  navy: "#1f2a4a",
+  muted: "#7f8ba5",
+  border: "#e9ebf3",
+};
+
+/* Reusable Tailwind class strings */
+const inputCls =
+  "w-full rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 py-2.5 text-sm text-[#1f2a4a] outline-none transition placeholder:text-[#a9b2c7] focus:border-[#e98a9b] focus:bg-white focus:ring-4 focus:ring-[#e98a9b]/20";
+const labelCls = "mb-1.5 block text-[13px] font-semibold text-[#1f2a4a]";
+const btnPrimary =
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] bg-[#e98a9b] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] transition hover:bg-[#d9748a] disabled:cursor-not-allowed disabled:opacity-60";
+const btnGhost =
+  "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] border border-[#e9ebf3] bg-white px-5 py-2.5 text-sm font-semibold text-[#1f2a4a] transition hover:bg-[#f5f6fb]";
 
 function ViewWarehouse() {
   const [warehouses, setWarehouses] = useState([]);
@@ -102,8 +119,6 @@ function ViewWarehouse() {
         method: "GET",
       });
 
-      console.log("Warehouse By ID Response:", response);
-
       if (!response?.status) {
         toast.error(response?.message || "Failed to fetch warehouse");
         return;
@@ -170,7 +185,6 @@ function ViewWarehouse() {
         setEditId(null);
         setFormData({ ...initialValues });
 
-        // Refresh list after saving
         getWarehouses();
       } else {
         toast.error(response?.message || "Failed to save warehouse");
@@ -207,7 +221,8 @@ function ViewWarehouse() {
     }
   };
 
-  // DELETE WAREHOUSE
+  // DELETE WAREHOUSE (currently not shown in the table)
+  // eslint-disable-next-line no-unused-vars
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this warehouse?")) {
       return;
@@ -242,116 +257,88 @@ function ViewWarehouse() {
   const columns = [
     {
       name: "S.No",
-      width: "65px",
+      width: "70px",
       cell: (row, index) => (
-        <span>{(page - 1) * limit + index + 1}</span>
+        <span className="font-semibold text-[#7f8ba5]">
+          {(page - 1) * limit + index + 1}
+        </span>
       ),
     },
     {
-      name: "WAREHOUSE",
-      minWidth: "190px",
+      name: "Warehouse",
+      minWidth: "200px",
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
-        <div style={{ padding: "8px 0" }}>
-          <div style={{ fontWeight: "600", color: "#343a40" }}>
-            {row.name}
-          </div>
-          <small style={{ color: "#888" }}>
+        <div className="py-2">
+          <div className="font-bold text-[#1f2a4a]">{row.name}</div>
+          <div className="text-xs text-[#7f8ba5]">
             {row.address || "No address"}
-          </small>
+          </div>
         </div>
       ),
     },
     {
-      name: "CODE",
+      name: "Code",
       selector: (row) => row.code,
       sortable: true,
       cell: (row) => (
-        <span
-          style={{
-            background: "#f0f2f5",
-            color: "#495057",
-            padding: "5px 10px",
-            borderRadius: "5px",
-            fontWeight: "600",
-            fontSize: "12px",
-          }}
-        >
+        <span className="rounded-md bg-[#fbeef0] px-2.5 py-1 font-mono text-xs text-[#b5576a]">
           {row.code}
         </span>
       ),
     },
     {
-      name: "CONTACT PERSON",
-      minWidth: "140px",
+      name: "Contact Person",
+      minWidth: "150px",
       selector: (row) => row.contactPerson || "-",
       sortable: true,
     },
     {
-      name: "PHONE",
+      name: "Phone",
       selector: (row) => row.phone || "-",
-      minWidth: "130px",
+      minWidth: "140px",
     },
     {
-      name: "STATUS",
+      name: "Status",
       selector: (row) => row.status,
       cell: (row) => (
         <span
-          style={{
-            padding: "5px 11px",
-            borderRadius: "20px",
-            fontSize: "11px",
-            fontWeight: "600",
-            background: row.status === "ACTIVE" ? "#e5f7ed" : "#fdeaea",
-            color: row.status === "ACTIVE" ? "#198754" : "#dc3545",
-          }}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide ${
+            row.status === "ACTIVE"
+              ? "bg-[#e1f6ea] text-[#1f9d62]"
+              : "bg-[#fdeaea] text-[#d64550]"
+          }`}
         >
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
           {row.status}
         </span>
       ),
     },
     {
-      name: "DEFAULT",
+      name: "Default",
       selector: (row) => row.isDefault,
       center: true,
       cell: (row) =>
         row.isDefault ? (
-          <span style={{ color: "#b8860b", fontWeight: "600" }}>
+          <span className="rounded-full bg-[#fff6dc] px-2.5 py-1 text-xs font-bold text-[#b8860b]">
             ★ Default
           </span>
         ) : (
-          <span style={{ color: "#999" }}>-</span>
+          <span className="text-[#7f8ba5]">-</span>
         ),
     },
     {
-      name: "ACTIONS",
-      width: "245px",
+      name: "Actions",
+      width: "240px",
       center: true,
       cell: (row) => (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-            padding: "5px 0",
-          }}
-        >
+        <div className="flex gap-2 py-1">
           {!row.isDefault && row.status === "ACTIVE" && (
             <button
               type="button"
               onClick={() => handleSetDefault(row._id)}
-              style={{
-                border: "1px solid #198754",
-                color: "#198754",
-                background: "#fff",
-                borderRadius: "5px",
-                padding: "6px 9px",
-                fontSize: "11px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
+              className="cursor-pointer rounded-lg border border-[#e9ebf3] bg-white px-3 py-1.5 text-xs font-semibold text-[#8c2f3f] transition hover:border-[#e98a9b] hover:bg-[#fbeef0]"
             >
               Set Default
             </button>
@@ -360,34 +347,10 @@ function ViewWarehouse() {
           <button
             type="button"
             onClick={() => handleEdit(row._id)}
-            style={{
-              border: "1px solid #0d6efd",
-              color: "#0d6efd",
-              background: "#fff",
-              borderRadius: "5px",
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
+            className="cursor-pointer rounded-lg border border-[#e98a9b] bg-[#e98a9b] px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[#d9748a] hover:bg-[#d9748a]"
           >
             Edit
           </button>
-{/* 
-          <button
-            type="button"
-            onClick={() => handleDelete(row._id)}
-            style={{
-              border: "1px solid #dc3545",
-              color: "#dc3545",
-              background: "#fff",
-              borderRadius: "5px",
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
-          >
-            Delete
-          </button> */}
         </div>
       ),
       ignoreRowClick: true,
@@ -396,103 +359,69 @@ function ViewWarehouse() {
     },
   ];
 
-  // DATATABLE CUSTOM STYLES
+  // DATATABLE CUSTOM STYLES (react-data-table-component needs an object)
   const customStyles = {
-    table: {
-      style: {
-        backgroundColor: "#ffffff",
-      },
-    },
+    table: { style: { backgroundColor: "#ffffff" } },
     headRow: {
       style: {
-        backgroundColor: "#f7f8fa",
-        borderBottom: "1px solid #e9ecef",
+        backgroundColor: theme.headBg,
+        borderBottom: "none",
         minHeight: "50px",
       },
     },
     headCells: {
       style: {
-        color: "#495057",
+        color: theme.headText,
         fontSize: "12px",
-        fontWeight: "600",
-        paddingLeft: "14px",
-        paddingRight: "14px",
+        fontWeight: "700",
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
+        paddingLeft: "16px",
+        paddingRight: "16px",
       },
     },
     rows: {
       style: {
-        minHeight: "65px",
+        minHeight: "70px",
         fontSize: "13px",
-        color: "#495057",
+        color: theme.navy,
         "&:not(:last-of-type)": {
-          borderBottom: "1px solid #f0f1f3",
+          borderBottom: `1px solid ${theme.border}`,
         },
       },
       highlightOnHoverStyle: {
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "#fdf6f7",
+        transitionDuration: "0.15s",
+        outline: "none",
       },
     },
     cells: {
-      style: {
-        paddingLeft: "14px",
-        paddingRight: "14px",
-      },
+      style: { paddingLeft: "16px", paddingRight: "16px" },
     },
     pagination: {
       style: {
-        borderTop: "1px solid #e9ecef",
+        borderTop: `1px solid ${theme.border}`,
         fontSize: "13px",
-        minHeight: "55px",
+        color: theme.muted,
+        minHeight: "58px",
       },
     },
   };
 
   return (
-    <div className="container-fluid" style={{ padding: "20px" }}>
+    <div className="min-h-screen bg-[#f5f6fb] px-3.5 py-[18px] md:px-8 md:py-7">
       {/* PAGE HEADER */}
-      <div
-        className="d-flex justify-content-between align-items-center mb-4"
-        style={{ gap: "12px" }}
-      >
+      <div className="mb-[22px] flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h4
-            style={{
-              fontSize: "22px",
-              fontWeight: "600",
-              color: "#263238",
-              marginBottom: "5px",
-            }}
-          >
+          <h1 className="mb-1 text-[28px] font-bold text-[#e98a9b]">
             Warehouse Management
-          </h4>
-
-          <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
-            Manage your warehouse locations
-          </p>
+          </h1>
+          <p className="text-sm text-[#7f8ba5]">Manage your warehouse locations</p>
         </div>
 
-        {!showForm && warehouses.length === 0 && (
-          <button
-            type="button"
-            onClick={handleCreate}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              backgroundColor: "#0d6efd",
-              color: "#ffffff",
-              border: "1px solid #0d6efd",
-              borderRadius: "6px",
-              padding: "10px 20px",
-              fontSize: "14px",
-              fontWeight: "600",
-              minHeight: "42px",
-              whiteSpace: "nowrap",
-              cursor: "pointer",
-            }}
-          >
-            <span style={{ fontSize: "19px", lineHeight: 1 }}>+</span>
+        {!showForm && warehouses.length === 0 && !loading && (
+          <button type="button" onClick={handleCreate} className={btnPrimary}>
+            <span className="text-lg leading-none">+</span>
             Add Warehouse
           </button>
         )}
@@ -500,216 +429,176 @@ function ViewWarehouse() {
 
       {/* CREATE / EDIT PAGE */}
       {showForm ? (
-        <div
-          className="card border-0 shadow-sm"
-          style={{ borderRadius: "10px" }}
-        >
-          <div className="card-header bg-white py-3">
-            <h5 className="mb-0 fw-semibold">
+        <div className="overflow-hidden rounded-2xl border border-[#e9ebf3] bg-white shadow-[0_4px_18px_rgba(31,42,74,0.04)]">
+          <div className="bg-[#e8cdd1] px-6 py-5">
+            <h5 className="text-lg font-bold text-[#8c2f3f]">
               {editId ? "Edit Warehouse" : "Create Warehouse"}
             </h5>
+            <span className="text-[13px] text-[#8c2f3f]/80">
+              Fields marked with * are required
+            </span>
           </div>
 
-          <div className="card-body p-4">
-            <form onSubmit={handleSubmit}>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label fw-semibold small">
-                    Warehouse Name *
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="name"
-                    placeholder="Enter warehouse name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-semibold small">
-                    Warehouse Code *
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="code"
-                    placeholder="Enter warehouse code"
-                    value={formData.code}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-semibold small">
-                    Address
-                  </label>
-                  <textarea
-                    className="form-control"
-                    name="address"
-                    placeholder="Enter warehouse address"
-                    rows="3"
-                    value={formData.address}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-3">
-                  <label className="form-label fw-semibold small">
-                    Contact Person
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="contactPerson"
-                    placeholder="Contact person"
-                    value={formData.contactPerson}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-3">
-                  <label className="form-label fw-semibold small">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="phone"
-                    placeholder="Phone number"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label fw-semibold small">
-                    Status
-                  </label>
-                  <select
-                    className="form-select"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                  </select>
-                </div>
-
-                <div className="col-md-6 d-flex align-items-center">
-                  <div className="form-check mt-3">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="isDefault"
-                      name="isDefault"
-                      checked={formData.isDefault}
-                      onChange={handleChange}
-                    />
-                    <label
-                      className="form-check-label fw-semibold small"
-                      htmlFor="isDefault"
-                    >
-                      Set as Default Warehouse
-                    </label>
-                  </div>
-                </div>
+          <form onSubmit={handleSubmit} className="px-7 pb-8 pt-6">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-12">
+              <div className="md:col-span-6">
+                <label className={labelCls}>Warehouse Name *</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  name="name"
+                  placeholder="Enter warehouse name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
-              <div className="d-flex gap-2 mt-4">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{
-                    backgroundColor: "#0d6efd",
-                    color: "#fff",
-                    border: "1px solid #0d6efd",
-                    borderRadius: "6px",
-                    padding: "9px 20px",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    cursor: submitting ? "not-allowed" : "pointer",
-                    opacity: submitting ? 0.7 : 1,
-                  }}
-                >
-                  {submitting
-                    ? "Saving..."
-                    : editId
-                      ? "Update Warehouse"
-                      : "Create Warehouse"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  style={{
-                    backgroundColor: "#6c757d",
-                    color: "#fff",
-                    border: "1px solid #6c757d",
-                    borderRadius: "6px",
-                    padding: "9px 20px",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
+              <div className="md:col-span-6">
+                <label className={labelCls}>Warehouse Code *</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  name="code"
+                  placeholder="Enter warehouse code"
+                  value={formData.code}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-            </form>
-          </div>
+
+              <div className="md:col-span-6">
+                <label className={labelCls}>Address</label>
+                <textarea
+                  className={inputCls}
+                  name="address"
+                  placeholder="Enter warehouse address"
+                  rows="3"
+                  value={formData.address}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="md:col-span-3">
+                <label className={labelCls}>Contact Person</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  name="contactPerson"
+                  placeholder="Contact person"
+                  value={formData.contactPerson}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="md:col-span-3">
+                <label className={labelCls}>Phone</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  name="phone"
+                  placeholder="Phone number"
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="md:col-span-6">
+                <label className={labelCls}>Status</label>
+                <select
+                  className={inputCls}
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-6">
+                <label
+                  htmlFor="isDefault"
+                  className="flex h-full cursor-pointer items-center gap-2.5 rounded-[10px] bg-[#fbeef0] px-3.5 py-3"
+                >
+                  <input
+                    type="checkbox"
+                    id="isDefault"
+                    name="isDefault"
+                    checked={formData.isDefault}
+                    onChange={handleChange}
+                    className="h-[18px] w-[18px] accent-[#e98a9b]"
+                  />
+                  <span className="text-[13px] font-semibold text-[#1f2a4a]">
+                    Set as Default Warehouse
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-7 flex gap-3 border-t border-[#e9ebf3] pt-[22px]">
+              <button type="submit" disabled={submitting} className={btnPrimary}>
+                {submitting
+                  ? "Saving..."
+                  : editId
+                    ? "Update Warehouse"
+                    : "Create Warehouse"}
+              </button>
+
+              <button type="button" onClick={handleCancel} className={btnGhost}>
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
       ) : (
         /* WAREHOUSE LIST PAGE */
-        <div
-          className="card border-0 shadow-sm"
-          style={{ borderRadius: "10px", overflow: "hidden" }}
-        >
-          <div
-            className="card-header bg-white d-flex justify-content-between align-items-center"
-            style={{ padding: "18px 20px" }}
-          >
+        <div className="overflow-hidden rounded-2xl border border-[#e9ebf3] bg-white shadow-[0_4px_18px_rgba(31,42,74,0.04)]">
+          <div className="flex items-center justify-between border-b border-[#e9ebf3] px-6 py-5">
             <div>
-              <h5 className="mb-1" style={{ fontWeight: "600" }}>
+              <h5 className="mb-0.5 text-lg font-bold text-[#1f2a4a]">
                 Warehouse List
               </h5>
-              <small className="text-muted">
-                Total {pagination.total} warehouses
-              </small>
+              <span className="text-[13px] text-[#7f8ba5]">
+                Quick view of all your locations
+              </span>
+            </div>
+            <div className="rounded-[10px] bg-[#e9ebff] px-3.5 py-1.5 text-xs font-bold text-[#6b73d6]">
+              {pagination.total}{" "}
+              {pagination.total === 1 ? "warehouse" : "warehouses"}
             </div>
           </div>
 
-          <div className="card-body p-0">
-            <DataTable
-              keyField="_id"
-              columns={columns}
-              data={warehouses}
-              customStyles={customStyles}
-              progressPending={loading}
-              pagination
-              paginationServer
-              paginationTotalRows={pagination.total}
-              paginationPerPage={limit}
-              paginationDefaultPage={page}
-              onChangePage={(newPage) => setPage(newPage)}
-              paginationRowsPerPageOptions={[10]}
-              highlightOnHover
-              responsive
-              persistTableHead
-              noDataComponent={
-                <div className="py-5 text-center">
-                  <h6 className="text-muted">No warehouses found</h6>
-                  <p className="text-muted mb-0">
-                    Add a warehouse to get started.
-                  </p>
+          <DataTable
+            keyField="_id"
+            columns={columns}
+            data={warehouses}
+            customStyles={customStyles}
+            progressPending={loading}
+            pagination
+            paginationServer
+            paginationTotalRows={pagination.total}
+            paginationPerPage={limit}
+            paginationDefaultPage={page}
+            onChangePage={(newPage) => setPage(newPage)}
+            paginationRowsPerPageOptions={[10]}
+            highlightOnHover
+            responsive
+            persistTableHead
+            noDataComponent={
+              <div className="py-12 text-center">
+                <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fbeef0] text-2xl text-[#e98a9b]">
+                  ▦
                 </div>
-              }
-            />
-          </div>
+                <h6 className="mb-1 font-bold text-[#1f2a4a]">
+                  No warehouses found
+                </h6>
+                <p className="text-[13px] text-[#7f8ba5]">
+                  Add a warehouse to get started.
+                </p>
+              </div>
+            }
+          />
         </div>
       )}
     </div>

@@ -13,6 +13,15 @@ import {
 import { toast } from "react-toastify";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
 
+/* Theme colours (used by the DataTable customStyles, which can't take classes) */
+const theme = {
+  headBg: "#e8cdd1",
+  headText: "#8c2f3f",
+  navy: "#1f2a4a",
+  muted: "#7f8ba5",
+  border: "#e9ebf3",
+};
+
 function ViewSubAdmin() {
   const navigate = useNavigate();
 
@@ -114,9 +123,7 @@ function ViewSubAdmin() {
         width: "75px",
         sortable: false,
         cell: (row, index) => (
-          <span style={{ color: "#64748b", fontWeight: 500 }}>
-            {index + 1}
-          </span>
+          <span className="font-semibold text-[#7f8ba5]">{index + 1}</span>
         ),
       },
       {
@@ -125,39 +132,12 @@ function ViewSubAdmin() {
         sortable: true,
         minWidth: "190px",
         cell: (row) => (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: "8px 0",
-            }}
-          >
-            <div
-              style={{
-                width: "38px",
-                height: "38px",
-                minWidth: "38px",
-                borderRadius: "50%",
-                backgroundColor: "#e8efff",
-                color: "#2458c6",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 700,
-                fontSize: "14px",
-              }}
-            >
+          <div className="flex items-center gap-3 py-2">
+            <div className="flex h-[38px] w-[38px] min-w-[38px] items-center justify-center rounded-full bg-[#e8cdd1] text-sm font-bold text-[#8c2f3f]">
               {(row.name || "S").trim().charAt(0).toUpperCase()}
             </div>
 
-            <span
-              style={{
-                color: "#1e293b",
-                fontWeight: 600,
-                overflowWrap: "anywhere",
-              }}
-            >
+            <span className="break-words font-bold text-[#1f2a4a]">
               {row.name || "Unnamed"}
             </span>
           </div>
@@ -170,7 +150,7 @@ function ViewSubAdmin() {
         minWidth: "250px",
         wrap: true,
         cell: (row) => (
-          <span style={{ color: "#475569", overflowWrap: "anywhere" }}>
+          <span className="break-words text-[#1f2a4a]">
             {row.email || "N/A"}
           </span>
         ),
@@ -185,28 +165,13 @@ function ViewSubAdmin() {
 
           return (
             <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "7px",
-                padding: "6px 11px",
-                borderRadius: "20px",
-                fontSize: "11px",
-                fontWeight: 700,
-                letterSpacing: "0.3px",
-                color: isActive ? "#15803d" : "#64748b",
-                backgroundColor: isActive ? "#dcfce7" : "#f1f5f9",
-                whiteSpace: "nowrap",
-              }}
+              className={`inline-flex items-center gap-[7px] whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide ${
+                isActive
+                  ? "bg-[#e1f6ea] text-[#1f9d62]"
+                  : "bg-[#fdeaea] text-[#d64550]"
+              }`}
             >
-              <span
-                style={{
-                  width: "7px",
-                  height: "7px",
-                  borderRadius: "50%",
-                  backgroundColor: isActive ? "#22c55e" : "#94a3b8",
-                }}
-              />
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
               {row.status || "N/A"}
             </span>
           );
@@ -217,37 +182,13 @@ function ViewSubAdmin() {
         width: "155px",
         minWidth: "155px",
         cell: (row) => (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: "10px",
-              width: "100%",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <div className="flex w-full flex-row items-center justify-start gap-2.5 whitespace-nowrap">
             <button
               type="button"
               title="Edit Sub Admin"
               aria-label={`Edit ${row.name || "sub-admin"}`}
               onClick={() => handleEdit(row)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "38px",
-                minWidth: "38px",
-                height: "38px",
-                padding: 0,
-                flexShrink: 0,
-                border: "1px solid #bfdbfe",
-                borderRadius: "8px",
-                backgroundColor: "#eff6ff",
-                color: "#2563eb",
-                cursor: "pointer",
-              }}
+              className="inline-flex h-[38px] w-[38px] min-w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-[#e98a9b] bg-[#fbeef0] p-0 text-[#d9748a] transition hover:bg-[#e98a9b] hover:text-white"
             >
               <FontAwesomeIcon icon={faPenToSquare} />
             </button>
@@ -258,23 +199,7 @@ function ViewSubAdmin() {
               aria-label={`Delete ${row.name || "sub-admin"}`}
               disabled={deletingId === row._id}
               onClick={() => handleDelete(row._id)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "38px",
-                minWidth: "38px",
-                height: "38px",
-                padding: 0,
-                flexShrink: 0,
-                border: "1px solid #fecaca",
-                borderRadius: "8px",
-                backgroundColor: "#fef2f2",
-                color: "#dc2626",
-                cursor:
-                  deletingId === row._id ? "not-allowed" : "pointer",
-                opacity: deletingId === row._id ? 0.6 : 1,
-              }}
+              className="inline-flex h-[38px] w-[38px] min-w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-[#fdeaea] bg-[#fdeaea] p-0 text-[#d64550] transition hover:bg-[#d64550] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {deletingId === row._id ? (
                 <span
@@ -290,126 +215,76 @@ function ViewSubAdmin() {
         ),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [deletingId]
   );
 
+  // DATATABLE CUSTOM STYLES (react-data-table-component needs an object)
   const customStyles = useMemo(
     () => ({
-      tableWrapper: {
-        style: {
-          width: "100%",
-          overflowX: "auto",
-        },
-      },
-      table: {
-        style: {
-          width: "100%",
-          minWidth: "800px",
-        },
-      },
+      tableWrapper: { style: { width: "100%", overflowX: "auto" } },
+      table: { style: { width: "100%", minWidth: "800px" } },
       headRow: {
         style: {
-          minHeight: "54px",
-          backgroundColor: "#f8fafc",
-          borderBottom: "1px solid #e2e8f0",
+          minHeight: "52px",
+          backgroundColor: theme.headBg,
+          borderBottom: "none",
         },
       },
       headCells: {
         style: {
           paddingLeft: "20px",
           paddingRight: "20px",
-          color: "#64748b",
-          fontSize: "11px",
+          color: theme.headText,
+          fontSize: "12px",
           fontWeight: 700,
-          letterSpacing: "0.6px",
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
           whiteSpace: "nowrap",
         },
       },
       rows: {
         style: {
-          minHeight: "68px",
+          minHeight: "70px",
           backgroundColor: "#ffffff",
-          borderBottom: "1px solid #f1f5f9",
+          borderBottom: `1px solid ${theme.border}`,
           fontSize: "13px",
-          color: "#334155",
+          color: theme.navy,
         },
         highlightOnHoverStyle: {
-          backgroundColor: "#f8fafc",
-          transition: "background-color 0.15s ease",
+          backgroundColor: "#fdf6f7",
+          transitionDuration: "0.15s",
+          outline: "none",
         },
       },
       cells: {
-        style: {
-          paddingLeft: "20px",
-          paddingRight: "20px",
-          overflow: "visible",
-        },
+        style: { paddingLeft: "20px", paddingRight: "20px", overflow: "visible" },
       },
       pagination: {
         style: {
           minHeight: "60px",
-          borderTop: "1px solid #e2e8f0",
-          color: "#64748b",
+          borderTop: `1px solid ${theme.border}`,
+          color: theme.muted,
           fontSize: "12px",
         },
       },
-      progress: {
-        style: {
-          minHeight: "180px",
-        },
-      },
+      progress: { style: { minHeight: "180px" } },
       noData: {
-        style: {
-          minHeight: "150px",
-          color: "#64748b",
-          fontSize: "14px",
-        },
+        style: { minHeight: "150px", color: theme.muted, fontSize: "14px" },
       },
     }),
     []
   );
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "100%",
-        padding: "28px",
-        backgroundColor: "#f5f7fb",
-        boxSizing: "border-box",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "16px",
-          marginBottom: "26px",
-        }}
-      >
+    <div className="min-h-full w-full bg-[#f5f6fb] p-7">
+      {/* PAGE HEADER */}
+      <div className="mb-[26px] flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2
-            style={{
-              margin: 0,
-              marginBottom: "7px",
-              color: "#172033",
-              fontSize: "26px",
-              fontWeight: 700,
-              letterSpacing: "-0.5px",
-            }}
-          >
+          <h2 className="mb-1.5 text-[28px] font-bold text-[#e98a9b]">
             Sub Admins
           </h2>
-
-          <p
-            style={{
-              margin: 0,
-              color: "#64748b",
-              fontSize: "14px",
-            }}
-          >
+          <p className="text-sm text-[#7f8ba5]">
             Manage sub-admin accounts and their access.
           </p>
         </div>
@@ -417,151 +292,43 @@ function ViewSubAdmin() {
         <button
           type="button"
           onClick={() => navigate("/add-subadmin")}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "9px",
-            padding: "12px 18px",
-            border: "none",
-            borderRadius: "9px",
-            backgroundColor: "#2563eb",
-            color: "#ffffff",
-            fontSize: "13px",
-            fontWeight: 600,
-            cursor: "pointer",
-            boxShadow: "0 3px 8px rgba(37, 99, 235, 0.18)",
-          }}
+          className="inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-[10px] bg-[#e98a9b] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] transition hover:bg-[#d9748a]"
         >
           <FontAwesomeIcon icon={faPlus} />
           Add Sub Admin
         </button>
       </div>
 
-
-      <div
-        style={{
-          width: "100%",
-          backgroundColor: "#ffffff",
-          border: "1px solid #e8edf5",
-          borderRadius: "14px",
-          boxShadow: "0 4px 18px rgba(15, 23, 42, 0.04)",
-          overflow: "hidden",
-          boxSizing: "border-box",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "16px",
-            padding: "22px 24px",
-            borderBottom: "1px solid #edf0f5",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "44px",
-                height: "44px",
-                borderRadius: "10px",
-                backgroundColor: "#eff6ff",
-                color: "#2563eb",
-                fontSize: "18px",
-              }}
-            >
+      {/* CARD */}
+      <div className="w-full overflow-hidden rounded-2xl border border-[#e9ebf3] bg-white shadow-[0_4px_18px_rgba(31,42,74,0.04)]">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e9ebf3] px-6 py-[22px]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fbeef0] text-lg text-[#e98a9b]">
               <FontAwesomeIcon icon={faUsers} />
             </div>
 
             <div>
-              <h5
-                style={{
-                  margin: 0,
-                  marginBottom: "5px",
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: "#1e293b",
-                }}
-              >
+              <h5 className="mb-1 text-[17px] font-bold text-[#1f2a4a]">
                 All Sub Admins
               </h5>
-
-              <p
-                style={{
-                  margin: 0,
-                  color: "#94a3b8",
-                  fontSize: "12px",
-                }}
-              >
+              <p className="text-xs text-[#7f8ba5]">
                 View and manage registered accounts
               </p>
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 13px",
-              borderRadius: "9px",
-              backgroundColor: "#f8fafc",
-              border: "1px solid #e2e8f0",
-              color: "#475569",
-              fontSize: "12px",
-            }}
-          >
+          <div className="flex items-center gap-2 rounded-[10px] bg-[#e9ebff] px-3.5 py-2 text-xs font-semibold text-[#6b73d6]">
             Total Sub Admins
-            <strong
-              style={{
-                color: "#1d4ed8",
-                fontSize: "15px",
-                marginLeft: "4px",
-              }}
-            >
-              {admins.length}
-            </strong>
+            <strong className="ml-1 text-[15px]">{admins.length}</strong>
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "14px",
-            padding: "20px 24px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              width: "100%",
-              maxWidth: "380px",
-              padding: "0 13px",
-              border: "1px solid #dce3ed",
-              borderRadius: "9px",
-              backgroundColor: "#ffffff",
-              boxSizing: "border-box",
-            }}
-          >
+        {/* SEARCH + REFRESH */}
+        <div className="flex flex-wrap items-center justify-between gap-3.5 px-6 py-5">
+          <div className="flex w-full max-w-[380px] items-center gap-2.5 rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 focus-within:border-[#e98a9b] focus-within:ring-4 focus-within:ring-[#e98a9b]/20">
             <FontAwesomeIcon
               icon={faMagnifyingGlass}
-              style={{ color: "#94a3b8", fontSize: "13px" }}
+              className="text-[13px] text-[#e98a9b]"
             />
 
             <input
@@ -570,16 +337,7 @@ function ViewSubAdmin() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search sub-admins"
-              style={{
-                width: "100%",
-                minWidth: 0,
-                height: "42px",
-                border: "none",
-                outline: "none",
-                backgroundColor: "transparent",
-                color: "#334155",
-                fontSize: "13px",
-              }}
+              className="h-[42px] w-full min-w-0 border-none bg-transparent text-[13px] text-[#1f2a4a] outline-none"
             />
           </div>
 
@@ -587,28 +345,14 @@ function ViewSubAdmin() {
             type="button"
             onClick={fetchAdmins}
             disabled={loading}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              padding: "11px 15px",
-              border: "1px solid #dce3ed",
-              borderRadius: "8px",
-              backgroundColor: "#ffffff",
-              color: "#475569",
-              fontSize: "12px",
-              fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.65 : 1,
-            }}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-[#e9ebf3] bg-white px-4 py-[11px] text-xs font-semibold text-[#8c2f3f] transition hover:bg-[#fbeef0] disabled:cursor-not-allowed disabled:opacity-65"
           >
             <FontAwesomeIcon icon={faRotate} />
             Refresh
           </button>
         </div>
 
-        <div style={{ width: "100%", overflowX: "auto" }}>
+        <div className="w-full overflow-x-auto">
           <DataTable
             columns={columns}
             data={filteredAdmins}
@@ -627,32 +371,18 @@ function ViewSubAdmin() {
             persistTableHead
             progressPending={loading}
             progressComponent={
-              <div style={{ padding: "45px 20px", textAlign: "center" }}>
+              <div className="px-5 py-[45px] text-center">
                 <div
-                  className="spinner-border text-primary"
+                  className="spinner-border text-[#e98a9b]"
                   role="status"
                 />
-                <p
-                  style={{
-                    marginTop: "14px",
-                    marginBottom: 0,
-                    color: "#64748b",
-                    fontSize: "13px",
-                  }}
-                >
+                <p className="mb-0 mt-3.5 text-[13px] text-[#7f8ba5]">
                   Loading sub-admins...
                 </p>
               </div>
             }
             noDataComponent={
-              <div
-                style={{
-                  padding: "45px 20px",
-                  textAlign: "center",
-                  color: "#64748b",
-                  fontSize: "13px",
-                }}
-              >
+              <div className="px-5 py-[45px] text-center text-[13px] text-[#7f8ba5]">
                 {search.trim()
                   ? "No matching sub-admins found."
                   : "No sub-admins found."}
@@ -662,15 +392,7 @@ function ViewSubAdmin() {
         </div>
       </div>
 
-      <p
-        style={{
-          marginTop: "18px",
-          marginBottom: 0,
-          textAlign: "right",
-          color: "#94a3b8",
-          fontSize: "11px",
-        }}
-      >
+      <p className="mb-0 mt-[18px] text-right text-[11px] text-[#7f8ba5]">
         Sub Admin Management
       </p>
     </div>

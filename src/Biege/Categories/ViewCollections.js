@@ -1,9 +1,42 @@
-
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import DataTable from "react-data-table-component";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
+
+// ================= TAILWIND CLASS HELPERS =================
+
+const disabledCls = "disabled:cursor-not-allowed disabled:opacity-60";
+
+const btnPrimary = `rounded-md bg-[#e98d9d] px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#d97589] ${disabledCls}`;
+
+const btnGhost = `rounded-md border border-[#e3c8cc] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#8c3d4e] transition hover:border-[#e98d9d] hover:bg-[#faf2f3] ${disabledCls}`;
+
+const rowEdit =
+  "rounded-md border border-[#e98d9d] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#c25b70] transition hover:bg-[#e98d9d] hover:text-white";
+
+const rowDelete =
+  "rounded-md border border-red-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-600 hover:text-white";
+
+const fieldCore =
+  "w-full rounded-md border px-3 py-2.5 text-[13px] text-[#26334a] outline-none transition focus:ring-4";
+
+const fieldOk =
+  "border-[#e3c8cc] bg-white focus:border-[#e98d9d] focus:ring-[#e98d9d]/30";
+
+const fieldBad =
+  "border-red-600 bg-red-50 focus:border-red-600 focus:ring-red-200";
+
+const labelClass = "text-xs font-semibold text-[#8c3d4e]";
+const errorClass = "text-xs font-medium text-red-600";
+
+const statusBadge = {
+  ACTIVE: "bg-[#e3f2e8] text-[#2f6b46]",
+  DRAFT: "bg-[#fff3dc] text-[#b7791f]",
+  ARCHIVED: "bg-[#eeeef3] text-[#5f6475]",
+};
+
+// ================= FORM CONFIG =================
 
 const initialValues = {
   name: "",
@@ -47,10 +80,7 @@ const collectionSchema = Yup.object().shape({
       return file.size <= 5 * 1024 * 1024;
     }),
 
-  description: Yup.string().max(
-    500,
-    "Description cannot exceed 500 characters"
-  ),
+  description: Yup.string().max(500, "Description cannot exceed 500 characters"),
 
   products: Yup.array()
     .of(Yup.string().required())
@@ -99,9 +129,7 @@ function ViewCollections() {
       });
 
       if (response.status) {
-        setCollections(
-          Array.isArray(response.data) ? response.data : []
-        );
+        setCollections(Array.isArray(response.data) ? response.data : []);
       }
     } catch (error) {
       toast.error(
@@ -124,14 +152,10 @@ function ViewCollections() {
         const productData = Array.isArray(response.data)
           ? response.data
           : Array.isArray(response.data?.products)
-            ? response.data.products
-            : [];
+          ? response.data.products
+          : [];
 
-        setProducts(
-          productData.filter(
-            (product) => product.status === "ACTIVE"
-          )
-        );
+        setProducts(productData.filter((product) => product.status === "ACTIVE"));
       }
     } catch (error) {
       console.error("Fetch products error:", error);
@@ -259,10 +283,10 @@ function ViewCollections() {
           description: collection.description || "",
           products: Array.isArray(collection.products)
             ? collection.products.map((product) =>
-              typeof product === "object"
-                ? String(product._id)
-                : String(product)
-            )
+                typeof product === "object"
+                  ? String(product._id)
+                  : String(product)
+              )
             : [],
           displayOrder: collection.displayOrder ?? 0,
           status: collection.status || "DRAFT",
@@ -273,9 +297,7 @@ function ViewCollections() {
         setShowForm(true);
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to get collection"
-      );
+      toast.error(error.response?.data?.message || "Failed to get collection");
     }
   };
 
@@ -312,9 +334,7 @@ function ViewCollections() {
       }
 
       const response = await makeApiRequest({
-        url: editId
-          ? `update-collection/${editId}`
-          : "create-collection",
+        url: editId ? `update-collection/${editId}` : "create-collection",
         method: editId ? "PUT" : "POST",
         data: payload,
         header: "image",
@@ -337,8 +357,8 @@ function ViewCollections() {
 
       toast.error(
         error.response?.data?.message ||
-        error.message ||
-        "Failed to save collection"
+          error.message ||
+          "Failed to save collection"
       );
     } finally {
       setSaving(false);
@@ -374,131 +394,100 @@ function ViewCollections() {
   const columns = useMemo(
     () => [
       {
-        name: "S.No",
-        cell: (row, index) => index + 1,
+        name: "S.NO",
+        cell: (row, index) => (
+          <span className="font-semibold text-[#26334a]">{index + 1}</span>
+        ),
         width: "70px",
         center: true,
       },
       {
-        name: "Image",
+        name: "IMAGE",
         cell: (row) =>
           row.image ? (
             <img
               src={row.image}
               alt={row.name}
-              width="50"
-              height="50"
-              style={{
-                objectFit: "cover",
-                borderRadius: "5px",
-              }}
+              className="h-[50px] w-[50px] rounded-lg border border-[#edf0f5] object-cover"
             />
           ) : (
-            "-"
+            <span className="text-[#8791a5]">-</span>
           ),
         width: "100px",
         center: true,
       },
       {
-        name: "Name",
+        name: "NAME",
         selector: (row) => row.name,
         sortable: true,
         grow: 1,
+        cell: (row) => (
+          <span className="font-semibold text-[#26334a]">{row.name}</span>
+        ),
       },
       {
-        name: "Slug",
+        name: "SLUG",
         selector: (row) => row.slug,
         sortable: true,
         grow: 1,
+        cell: (row) => (
+          <span className="rounded border border-[#e3c8cc] bg-[#faf2f3] px-2 py-0.5 font-mono text-xs text-[#8c3d4e]">
+            {row.slug}
+          </span>
+        ),
       },
       {
-        name: "Products",
+        name: "PRODUCTS",
         selector: (row) =>
           Array.isArray(row.products) ? row.products.length : 0,
         sortable: true,
         center: true,
-        width: "110px",
+        width: "120px",
+        cell: (row) => (
+          <span className="rounded-full bg-[#e1f4fb] px-3 py-1 text-xs font-bold text-[#218cac]">
+            {Array.isArray(row.products) ? row.products.length : 0}
+          </span>
+        ),
       },
       {
-        name: "Order",
+        name: "ORDER",
         selector: (row) => row.displayOrder,
         sortable: true,
         center: true,
         width: "100px",
       },
       {
-        name: "Status",
+        name: "STATUS",
         cell: (row) => (
           <span
-            style={{
-              padding: "5px 10px",
-              borderRadius: "5px",
-              fontSize: "12px",
-              fontWeight: "600",
-              color:
-                row.status === "ACTIVE"
-                  ? "#198754"
-                  : row.status === "DRAFT"
-                    ? "#856404"
-                    : "#dc3545",
-              backgroundColor:
-                row.status === "ACTIVE"
-                  ? "#d1e7dd"
-                  : row.status === "DRAFT"
-                    ? "#fff3cd"
-                    : "#f8d7da",
-            }}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide ${
+              statusBadge[row.status] || "bg-[#eeeef3] text-[#26334a]"
+            }`}
           >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {row.status}
           </span>
         ),
         sortable: true,
         center: true,
-        width: "120px",
+        width: "130px",
       },
       {
-        name: "Actions",
+        name: "ACTIONS",
         cell: (row) => (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <button
               type="button"
+              className={rowEdit}
               onClick={() => handleEdit(row._id)}
-              style={{
-                display: "inline-block",
-                backgroundColor: "#0d6efd",
-                color: "#ffffff",
-                border: "1px solid #0d6efd",
-                borderRadius: "5px",
-                padding: "6px 14px",
-                cursor: "pointer",
-                fontSize: "13px",
-                fontWeight: "500",
-              }}
             >
               Edit
             </button>
 
             <button
               type="button"
+              className={rowDelete}
               onClick={() => handleDelete(row._id)}
-              style={{
-                display: "inline-block",
-                backgroundColor: "#dc3545",
-                color: "#ffffff",
-                border: "1px solid #dc3545",
-                borderRadius: "5px",
-                padding: "6px 14px",
-                cursor: "pointer",
-                fontSize: "13px",
-                fontWeight: "500",
-              }}
             >
               Delete
             </button>
@@ -513,6 +502,58 @@ function ViewCollections() {
     []
   );
 
+  const tableStyles = {
+    headRow: {
+      style: {
+        backgroundColor: "#e3c8cc",
+        minHeight: "52px",
+        borderBottom: "none",
+        borderTopLeftRadius: "10px",
+        borderTopRightRadius: "10px",
+      },
+    },
+    headCells: {
+      style: {
+        fontSize: "11px",
+        fontWeight: "700",
+        letterSpacing: "0.08em",
+        color: "#8c3d4e",
+        padding: "12px",
+      },
+    },
+    cells: {
+      style: {
+        fontSize: "13px",
+        color: "#26334a",
+        padding: "12px",
+      },
+    },
+    rows: {
+      style: {
+        minHeight: "68px",
+        borderBottomColor: "#edf0f5",
+      },
+      stripedStyle: {
+        backgroundColor: "#fdf8f9",
+        color: "#26334a",
+      },
+      highlightOnHoverStyle: {
+        backgroundColor: "#faf2f3",
+        color: "#26334a",
+        borderBottomColor: "#edf0f5",
+        outline: "none",
+        transition: "0.2s",
+      },
+    },
+    pagination: {
+      style: {
+        borderTop: "1px solid #edf0f5",
+        minHeight: "60px",
+        color: "#8791a5",
+      },
+    },
+  };
+
   // Search collections
   const filteredCollections = useMemo(() => {
     const search = searchText.trim().toLowerCase();
@@ -526,163 +567,191 @@ function ViewCollections() {
     );
   }, [collections, searchText]);
 
+  const fieldClass = (name) =>
+    `${fieldCore} ${errors[name] ? fieldBad : fieldOk}`;
+
   return (
-    <div className="container-fluid py-3">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <div className="min-h-screen bg-[#f6f7fb] p-4 sm:p-7">
+      {/* HEADER */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h4>Collections</h4>
-          <p className="text-muted">
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+            Collections
+          </h3>
+          <p className="text-sm text-[#8791a5]">
             Manage manual product collections
           </p>
         </div>
 
         {!showForm && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleCreate}
-          >
+          <button type="button" className={btnPrimary} onClick={handleCreate}>
+            <i className="fa-solid fa-plus mr-2"></i>
             Add Collection
           </button>
         )}
       </div>
 
       {showForm ? (
-        <div className="card">
-          <div className="card-header">
-            <h5>{editId ? "Edit Collection" : "Create Collection"}</h5>
+        /* ================= FORM ================= */
+        <div className="overflow-hidden rounded-[13px] border border-[#edf0f5] bg-white shadow-[0_3px_12px_rgba(30,40,70,0.035)]">
+          <div className="border-b border-[#e3c8cc] bg-[#e3c8cc] px-6 py-4">
+            <h5 className="text-xl font-bold text-[#26334a]">
+              {editId ? "Edit Collection" : "Create Collection"}
+            </h5>
+            <p className="mt-0.5 text-xs text-[#8c3d4e]">
+              Fields marked with * are required
+            </p>
           </div>
 
-          <div className="card-body">
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Collection Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    className="form-control"
-                    value={formData.name}
-                    onChange={handleChange}
-                  />
-                  {errors.name && (
-                    <small className="text-danger">{errors.name}</small>
-                  )}
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Slug *</label>
-                  <input
-                    type="text"
-                    name="slug"
-                    className="form-control"
-                    value={formData.slug}
-                    onChange={handleChange}
-                  />
-                  {errors.slug && (
-                    <small className="text-danger">{errors.slug}</small>
-                  )}
-                </div>
-
-                <div className="col-md-12 mb-3">
-                  <label className="form-label">Collection Image *</label>
-                  <input
-                    type="file"
-                    className="form-control"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleImageChange}
-                  />
-
-                  {errors.image && (
-                    <small className="text-danger">{errors.image}</small>
-                  )}
-
-                  {(formData.image || existingImage) && (
-                    <div className="mt-2">
-                      <img
-                        src={
-                          formData.image
-                            ? URL.createObjectURL(formData.image)
-                            : existingImage
-                        }
-                        alt="Collection preview"
-                        width="120"
-                        height="100"
-                        style={{ objectFit: "cover" }}
-                      />
-                    </div>
-                  )}
-
-                  <small className="text-muted d-block">
-                    JPG, PNG or WEBP. Maximum size 5 MB.
-                  </small>
-                </div>
-
-                <div className="col-md-12 mb-3">
-                  <label className="form-label">Description</label>
-                  <textarea
-                    name="description"
-                    className="form-control"
-                    rows="3"
-                    value={formData.description}
-                    onChange={handleChange}
-                  />
-                  {errors.description && (
-                    <small className="text-danger">
-                      {errors.description}
-                    </small>
-                  )}
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Display Order *</label>
-                  <input
-                    type="number"
-                    name="displayOrder"
-                    min="0"
-                    className="form-control"
-                    value={formData.displayOrder}
-                    onChange={handleChange}
-                  />
-                  {errors.displayOrder && (
-                    <small className="text-danger">
-                      {errors.displayOrder}
-                    </small>
-                  )}
-                </div>
-
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Status *</label>
-                  <select
-                    name="status"
-                    className="form-select"
-                    value={formData.status}
-                    onChange={handleChange}
-                  >
-                    <option value="DRAFT">Draft</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="ARCHIVED">Archived</option>
-                  </select>
-                  {errors.status && (
-                    <small className="text-danger">{errors.status}</small>
-                  )}
-                </div>
+          <form className="p-5 sm:p-6" onSubmit={handleSubmit} noValidate>
+            <div className="grid grid-cols-1 gap-x-5 gap-y-[18px] md:grid-cols-2">
+              {/* NAME */}
+              <div className="flex flex-col gap-[7px]">
+                <label className={labelClass}>
+                  Collection Name <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  className={fieldClass("name")}
+                  value={formData.name}
+                  onChange={handleChange}
+                />
+                {errors.name && <span className={errorClass}>{errors.name}</span>}
               </div>
 
-              <hr />
+              {/* SLUG */}
+              <div className="flex flex-col gap-[7px]">
+                <label className={labelClass}>
+                  Slug <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="slug"
+                  className={fieldClass("slug")}
+                  value={formData.slug}
+                  onChange={handleChange}
+                />
+                {errors.slug && <span className={errorClass}>{errors.slug}</span>}
+              </div>
 
-              <h5>Select Products *</h5>
-              <p className="text-muted">
-                Select at least one active product for this collection.
-              </p>
+              {/* IMAGE */}
+              <div className="flex flex-col gap-[7px] md:col-span-2">
+                <label className={labelClass}>
+                  Collection Image <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="file"
+                  className="w-full rounded-md border border-dashed border-[#e98d9d] bg-[#faf2f3] p-2.5 text-xs file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-[#e98d9d] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImageChange}
+                />
 
-              <div className="border rounded p-3">
+                {errors.image && (
+                  <span className={errorClass}>{errors.image}</span>
+                )}
+
+                {(formData.image || existingImage) && (
+                  <img
+                    src={
+                      formData.image
+                        ? URL.createObjectURL(formData.image)
+                        : existingImage
+                    }
+                    alt="Collection preview"
+                    className="mt-1 h-[100px] w-[120px] rounded-[10px] border border-[#edf0f5] object-cover"
+                  />
+                )}
+
+                <span className="text-[11px] text-[#8791a5]">
+                  JPG, PNG or WEBP. Maximum size 5 MB.
+                </span>
+              </div>
+
+              {/* DESCRIPTION */}
+              <div className="flex flex-col gap-[7px] md:col-span-2">
+                <label className={labelClass}>Description</label>
+                <textarea
+                  name="description"
+                  rows="3"
+                  className={`${fieldClass("description")} resize-y`}
+                  value={formData.description}
+                  onChange={handleChange}
+                />
+                {errors.description && (
+                  <span className={errorClass}>{errors.description}</span>
+                )}
+              </div>
+
+              {/* DISPLAY ORDER */}
+              <div className="flex flex-col gap-[7px]">
+                <label className={labelClass}>
+                  Display Order <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="displayOrder"
+                  min="0"
+                  className={fieldClass("displayOrder")}
+                  value={formData.displayOrder}
+                  onChange={handleChange}
+                />
+                {errors.displayOrder && (
+                  <span className={errorClass}>{errors.displayOrder}</span>
+                )}
+              </div>
+
+              {/* STATUS */}
+              <div className="flex flex-col gap-[7px]">
+                <label className={labelClass}>
+                  Status <span className="text-red-600">*</span>
+                </label>
+                <select
+                  name="status"
+                  className={fieldClass("status")}
+                  value={formData.status}
+                  onChange={handleChange}
+                >
+                  <option value="DRAFT">Draft</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+                {errors.status && (
+                  <span className={errorClass}>{errors.status}</span>
+                )}
+              </div>
+            </div>
+
+            {/* PRODUCT PICKER */}
+            <div className="mt-7 border-t border-[#edf0f5] pt-6">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <h5 className="text-lg font-bold text-[#26334a]">
+                    Select Products <span className="text-red-600">*</span>
+                  </h5>
+                  <p className="text-sm text-[#8791a5]">
+                    Select at least one active product for this collection.
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-[#e98d9d] px-3 py-1 text-xs font-bold text-white">
+                  {formData.products.length} selected
+                </span>
+              </div>
+
+              <div
+                className={`rounded-[10px] border p-4 ${
+                  errors.products
+                    ? "border-red-400 bg-red-50"
+                    : "border-[#e3c8cc] bg-[#fdf8f9]"
+                }`}
+              >
                 {products.length === 0 ? (
-                  <p className="text-muted mb-0">
+                  <p className="text-sm text-[#8791a5]">
                     No active products available.
                   </p>
                 ) : (
-                  <div className="row">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {products.map((product) => {
                       const productId = String(product._id);
 
@@ -691,149 +760,131 @@ function ViewCollections() {
                       );
 
                       return (
-                        <div
-                          className="col-md-6 col-lg-4 mb-3"
+                        <label
                           key={productId}
+                          htmlFor={`product-${productId}`}
+                          className={`pointer-events-auto flex h-full cursor-pointer items-center gap-3 rounded-[10px] border p-2.5 transition ${
+                            isSelected
+                              ? "border-[#e98d9d] bg-[#faf2f3] shadow-sm"
+                              : "border-[#edf0f5] bg-white hover:border-[#e3c8cc]"
+                          }`}
                         >
-                          <div className="border rounded p-2 d-flex align-items-center gap-2 h-100">
-                            <input
-                              type="checkbox"
-                              id={`product-${productId}`}
-                              checked={isSelected}
-                              onChange={() => handleProductSelect(productId)}
-                              style={{
-                                width: "18px",
-                                height: "18px",
-                                cursor: "pointer",
-                                flexShrink: 0,
-                              }}
+                          <input
+                            type="checkbox"
+                            id={`product-${productId}`}
+                            checked={isSelected}
+                            onChange={() => handleProductSelect(productId)}
+                            className="h-[18px] w-[18px] shrink-0 cursor-pointer accent-[#e98d9d]"
+                          />
+
+                          {product.image && (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="h-[50px] w-[50px] shrink-0 rounded-lg border border-[#edf0f5] object-cover"
                             />
+                          )}
 
-                            <label
-                              htmlFor={`product-${productId}`}
-                              className="d-flex align-items-center gap-2 mb-0"
-                              style={{ cursor: "pointer" }}
-                            >
-                              {product.image && (
-                                <img
-                                  src={product.image}
-                                  alt={product.name}
-                                  width="50"
-                                  height="50"
-                                  style={{ objectFit: "cover" }}
-                                />
-                              )}
+                          <span className="min-w-0">
+                            <strong className="block truncate text-[13px] text-[#26334a]">
+                              {product.name}
+                            </strong>
 
-                              <span>
-                                <strong className="d-block">
-                                  {product.name}
-                                </strong>
+                            <span className="block text-[11px] text-[#8791a5]">
+                              SKU: {product.sku}
+                            </span>
 
-                                <small className="text-muted d-block">
-                                  SKU: {product.sku}
-                                </small>
-
-                                <small className="d-block">
-                                  Price: {product.price}
-                                </small>
-                              </span>
-                            </label>
-                          </div>
-                        </div>
+                            <span className="block text-xs font-semibold text-[#8c3d4e]">
+                              Price: {product.price}
+                            </span>
+                          </span>
+                        </label>
                       );
                     })}
                   </div>
                 )}
               </div>
 
-              <div className="mt-2">
-                <small>
-                  Selected products: {formData.products.length}
-                </small>
-
-                {errors.products && (
-                  <div>
-                    <small className="text-danger">
-                      {errors.products}
-                    </small>
-                  </div>
-                )}
-              </div>
-
-              <div className="d-flex gap-2 mt-4">
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={saving}
-                >
-                  {saving
-                    ? "Saving..."
-                    : editId
-                      ? "Update Collection"
-                      : "Create Collection"}
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={resetForm}
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : (
-        <div className="card">
-          <div className="card-body">
-            <div className="d-flex justify-content-end mb-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search collections..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ maxWidth: "300px" }}
-              />
+              {errors.products && (
+                <div className="mt-2">
+                  <span className={errorClass}>{errors.products}</span>
+                </div>
+              )}
             </div>
 
-            <DataTable
-              columns={columns}
-              data={filteredCollections}
-              progressPending={loading}
-              pagination
-              paginationPerPage={10}
-              paginationRowsPerPageOptions={[5, 10, 25, 50]}
-              highlightOnHover
-              responsive
-              striped
-              persistTableHead
-              noDataComponent="No collections found."
-              customStyles={{
-                headCells: {
-                  style: {
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    backgroundColor: "#f8f9fa",
-                    padding: "12px",
-                  },
-                },
-                cells: {
-                  style: {
-                    fontSize: "13px",
-                    padding: "12px",
-                  },
-                },
-                rows: {
-                  style: {
-                    minHeight: "65px",
-                  },
-                },
-              }}
+            {/* ACTIONS */}
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-2.5 border-t border-[#edf0f5] pt-5">
+              <button
+                type="button"
+                className={btnGhost}
+                onClick={resetForm}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+
+              <button type="submit" className={btnPrimary} disabled={saving}>
+                {saving
+                  ? "Saving..."
+                  : editId
+                  ? "Update Collection"
+                  : "Create Collection"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        /* ================= LIST ================= */
+        <div className="rounded-[13px] border border-[#edf0f5] bg-white p-4 shadow-[0_3px_12px_rgba(30,40,70,0.035)] md:p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h6 className="mb-1 text-base font-bold text-[#26334a]">
+                Collection List
+              </h6>
+              <span className="text-xs text-[#8791a5]">
+                Total: {collections.length} | Showing:{" "}
+                {filteredCollections.length}
+              </span>
+            </div>
+
+            <input
+              type="text"
+              className="w-full rounded-md border border-[#e3c8cc] bg-white px-3.5 py-2.5 text-[13px] text-[#26334a] outline-none transition focus:border-[#e98d9d] focus:ring-4 focus:ring-[#e98d9d]/30 sm:w-[300px]"
+              placeholder="Search collections..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
             />
           </div>
+
+          <DataTable
+            columns={columns}
+            data={filteredCollections}
+            progressPending={loading}
+            progressComponent={
+              <div className="py-12 text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#e3c8cc] border-t-[#e98d9d]" />
+                <p className="mt-3 text-sm text-[#8791a5]">
+                  Loading collections...
+                </p>
+              </div>
+            }
+            pagination
+            paginationPerPage={10}
+            paginationRowsPerPageOptions={[5, 10, 25, 50]}
+            highlightOnHover
+            responsive
+            striped
+            persistTableHead
+            noDataComponent={
+              <div className="py-12 text-center">
+                <i className="fa-solid fa-layer-group mb-3 text-3xl text-[#e3c8cc]"></i>
+                <h6 className="text-base font-semibold text-[#8791a5]">
+                  No collections found.
+                </h6>
+              </div>
+            }
+            customStyles={tableStyles}
+          />
         </div>
       )}
     </div>

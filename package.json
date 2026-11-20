@@ -4,6 +4,7 @@
   "proxy": "http://localhost:3003",
   "private": true,
   "dependencies": {
+    "@craco/craco": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.6",
     "@react-pdf/renderer": "^3.4.4",
@@ -42,7 +43,7 @@
   "scripts": {
     "start": "DANGEROUSLY_DISABLE_HOST_CHECK=true react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "craco test",
     "eject": "react-scripts eject",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
@@ -66,6 +67,9 @@
     ]
   },
   "devDependencies": {
-    "prettier": "^3.9.10"
+    "autoprefixer": "^10.7.0",
+    "postcss": "^8.5.33",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^3.4.17"
   }
 }

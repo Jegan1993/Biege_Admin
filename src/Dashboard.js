@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { makeApiRequest } from "./AxiosServices/apiCall";
@@ -87,9 +86,7 @@ const dashboardCards = [
 ];
 
 const getResponseBody = (response) => {
-  return response?.data?.status !== undefined
-    ? response.data
-    : response;
+  return response?.data?.status !== undefined ? response.data : response;
 };
 
 function Dashboard() {
@@ -116,12 +113,8 @@ function Dashboard() {
 
         const result = getResponseBody(response);
 
-
-
         if (result?.status !== true) {
-          throw new Error(
-            result?.message || "Unable to load dashboard."
-          );
+          throw new Error(result?.message || "Unable to load dashboard.");
         }
 
         if (cancelled) return;
@@ -129,9 +122,7 @@ function Dashboard() {
         setRole(result.data?.role || "");
 
         setPermissions(
-          Array.isArray(result.data?.permissions)
-            ? result.data.permissions
-            : []
+          Array.isArray(result.data?.permissions) ? result.data.permissions : []
         );
 
         setStats(result.data?.stats || {});
@@ -141,8 +132,8 @@ function Dashboard() {
 
           setError(
             error.response?.data?.message ||
-            error.message ||
-            "Unable to load dashboard."
+              error.message ||
+              "Unable to load dashboard."
           );
         }
       } finally {
@@ -158,7 +149,6 @@ function Dashboard() {
       cancelled = true;
     };
   }, []);
-
 
   const hasModuleAccess = (module) => {
     if (role === "SUPER_ADMIN") {
@@ -176,146 +166,40 @@ function Dashboard() {
       );
     });
   };
+
   const visibleCards = dashboardCards.filter(
-    (card) =>
-      hasModuleAccess(card.module) &&
-      stats[card.statKey] !== undefined
+    (card) => hasModuleAccess(card.module) && stats[card.statKey] !== undefined
   );
 
-  const styles = {
-    page: {
-      minHeight: "100vh",
-      background: "#f6f7fb",
-      padding: "28px",
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      flexWrap: "wrap",
-      gap: "15px",
-      marginBottom: "25px",
-    },
-    heading: {
-      color: "#202b43",
-      fontWeight: "700",
-      marginBottom: "6px",
-    },
-    subtitle: {
-      color: "#8791a5",
-      fontSize: "14px",
-      marginBottom: 0,
-    },
-    role: {
-      background: "#e9edff",
-      color: "#4258ad",
-      borderRadius: "8px",
-      padding: "10px 16px",
-      fontWeight: "600",
-      fontSize: "13px",
-    },
-    banner: {
-      background: "linear-gradient(110deg, #253c86, #596ed0)",
-      borderRadius: "15px",
-      padding: "30px 35px",
-      color: "#ffffff",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: "32px",
-      boxShadow: "0 7px 20px rgba(49, 68, 143, 0.13)",
-    },
-    bannerLabel: {
-      fontSize: "11px",
-      letterSpacing: "2px",
-      opacity: 0.75,
-      fontWeight: "700",
-    },
-    bannerTitle: {
-      fontWeight: "700",
-      marginTop: "10px",
-    },
-    bannerText: {
-      color: "#e1e6ff",
-      fontSize: "14px",
-      marginBottom: 0,
-    },
-    bannerIcon: {
-      fontSize: "60px",
-      opacity: 0.3,
-      paddingRight: "20px",
-    },
-    sectionHeading: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "20px",
-    },
-    card: {
-      background: "#ffffff",
-      border: "1px solid #edf0f5",
-      borderRadius: "13px",
-      padding: "23px",
-      cursor: "pointer",
-      boxShadow: "0 3px 12px rgba(30, 40, 70, 0.035)",
-      height: "100%",
-      transition: "transform 0.2s ease, box-shadow 0.2s ease",
-    },
-    cardTitle: {
-      color: "#7e899b",
-      fontSize: "14px",
-      marginBottom: "12px",
-    },
-    cardValue: {
-      color: "#26334a",
-      fontSize: "30px",
-      fontWeight: "700",
-      marginBottom: "7px",
-    },
-    cardDescription: {
-      color: "#9aa2b1",
-      fontSize: "12px",
-    },
-    cardFooter: {
-      borderTop: "1px solid #f0f1f5",
-      marginTop: "22px",
-      paddingTop: "15px",
-      display: "flex",
-      justifyContent: "space-between",
-      color: "#5269cb",
-      fontSize: "13px",
-      fontWeight: "600",
-    },
-    empty: {
-      background: "#ffffff",
-      borderRadius: "13px",
-      padding: "55px 20px",
-      textAlign: "center",
-      marginTop: "20px",
-    },
-  };
+  // ================= LOADING =================
 
   if (loading) {
     return (
-      <div
-        className="container-fluid text-center"
-        style={{ padding: "100px 20px" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+      <div className="px-5 py-24 text-center">
+        <div
+          className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#e3c8cc] border-t-[#e98d9d]"
+          role="status"
+        >
+          <span className="sr-only">Loading...</span>
         </div>
-        <p className="text-muted mt-3">Loading dashboard...</p>
+        <p className="mt-3 text-sm text-[#8791a5]">Loading dashboard...</p>
       </div>
     );
   }
 
+  // ================= ERROR =================
+
   if (error) {
     return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger">{error}</div>
+      <div className="px-4 py-6">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+
         <button
-          className="btn btn-primary"
+          type="button"
           onClick={() => window.location.reload()}
+          className="rounded-md bg-[#e98d9d] px-[18px] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#d97589]"
         >
           Try Again
         </button>
@@ -323,114 +207,89 @@ function Dashboard() {
     );
   }
 
-  return (
-    <div className="container-fluid" style={styles.page}>
+  // ================= PAGE =================
 
+  return (
+    <div className="min-h-screen bg-[#f5f5f5] p-4 sm:p-7">
       {/* Header */}
-      <div style={styles.header}>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 style={styles.heading}>Dashboard</h3>
-          <p style={styles.subtitle}>
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+            Dashboard
+          </h3>
+          <p className="text-sm text-[#8791a5]">
             Welcome back! Here's your business overview.
           </p>
         </div>
 
-        <div style={styles.role}>
-          <i className="fa fa-user-shield me-2"></i>
+        <div className="rounded-lg bg-[#e9edff] px-4 py-2.5 text-[13px] font-semibold text-[#e98d9d]">
+          <i className="fa fa-user-shield mr-2"></i>
           {role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
         </div>
       </div>
 
       {/* Welcome Banner */}
-      <div style={styles.banner}>
+      <div className="mb-8 flex items-center justify-between rounded-[15px] bg-[linear-gradient(110deg,#e98d9d,#e3c8cc)] px-[35px] py-[30px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
         <div>
-          <span style={styles.bannerLabel}>BEIGE ADMIN PANEL</span>
+          <span className="text-[11px] font-bold tracking-[2px] opacity-75">
+            BEIGE ADMIN PANEL
+          </span>
 
-          <h4 style={styles.bannerTitle}>
-            Business Overview
-          </h4>
+          <h4 className="mt-2.5 text-2xl font-bold">Business Overview</h4>
 
-          <p style={styles.bannerText}>
-            Monitor your business activities and manage your modules
-            from one place.
+          <p className="text-sm text-white/80">
+            Monitor your business activities and manage your modules from one
+            place.
           </p>
         </div>
 
-        <div style={styles.bannerIcon}>
+        <div className="hidden pr-5 text-[60px] opacity-30 sm:block">
           <i className="fa fa-chart-line"></i>
         </div>
       </div>
 
       {/* Section Heading */}
-      <div style={styles.sectionHeading}>
+      <div className="mb-5 flex items-center justify-between">
         <div>
-          <h5 className="fw-bold mb-1">Overview</h5>
-          <p className="text-muted small mb-0">
-            Quick summary of your business
-          </p>
+          <h5 className="mb-1 text-xl font-bold text-black">Overview</h5>
+          <p className="text-sm text-[#8791a5]">Quick summary of your business</p>
         </div>
 
-        <span className="text-muted small">
+        <span className="text-sm text-[#8791a5]">
           {visibleCards.length} available sections
         </span>
       </div>
 
       {/* Dashboard Cards */}
-      <div className="row g-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {visibleCards.map((card) => (
           <div
-            className="col-12 col-sm-6 col-xl-4"
             key={card.statKey}
+            onClick={() => navigate(card.route)}
+            className="h-full cursor-pointer rounded-[13px] border border-[#edf0f5] bg-white p-[23px] shadow-[0_3px_12px_rgba(30,40,70,0.035)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_9px_24px_rgba(30,40,70,0.09)]"
           >
-            <div
-              style={styles.card}
-              onClick={() => navigate(card.route)}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = "translateY(-5px)";
-                event.currentTarget.style.boxShadow =
-                  "0 9px 24px rgba(30, 40, 70, 0.09)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = "translateY(0)";
-                event.currentTarget.style.boxShadow =
-                  "0 3px 12px rgba(30, 40, 70, 0.035)";
-              }}
-            >
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <p style={styles.cardTitle}>{card.title}</p>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="mb-3 text-sm text-[#7e899b]">{card.title}</p>
 
-                  <h2 style={styles.cardValue}>
-                    {Number(stats[card.statKey]).toLocaleString("en-IN")}
-                  </h2>
+                <h2 className="mb-[7px] text-[30px] font-bold text-[#26334a]">
+                  {Number(stats[card.statKey]).toLocaleString("en-IN")}
+                </h2>
 
-                  <span style={styles.cardDescription}>
-                    {card.description}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    width: "52px",
-                    height: "52px",
-                    minWidth: "52px",
-                    borderRadius: "12px",
-                    background: card.background,
-                    color: card.color,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    fontSize: "21px",
-                  }}
-                >
-                  <i className={`fa ${card.icon}`}></i>
-                </div>
+                <span className="text-xs text-[#9aa2b1]">{card.description}</span>
               </div>
 
-              <div style={styles.cardFooter}>
-                <span>View Details</span>
-                <i className="fa fa-arrow-right"></i>
+              <div
+                className="flex h-[52px] w-[52px] min-w-[52px] items-center justify-center rounded-xl text-[21px]"
+                style={{ background: card.background, color: card.color }}
+              >
+                <i className={`fa ${card.icon}`}></i>
               </div>
+            </div>
+
+            <div className="mt-[22px] flex justify-between border-t border-[#f0f1f5] pt-[15px] text-[13px] font-semibold">
+              <span className="text-black">View Details</span>
+              <i className="fa fa-arrow-right"></i>
             </div>
           </div>
         ))}
@@ -438,16 +297,14 @@ function Dashboard() {
 
       {/* No Permissions */}
       {visibleCards.length === 0 && (
-        <div style={styles.empty}>
-          <i
-            className="fa fa-lock fa-3x text-secondary mb-3"
-          ></i>
+        <div className="mt-5 rounded-[13px] bg-white px-5 py-[55px] text-center">
+          <i className="fa fa-lock fa-3x mb-3 text-gray-500"></i>
 
-          <h5 className="fw-bold">No Dashboard Access</h5>
+          <h5 className="text-xl font-bold text-black">No Dashboard Access</h5>
 
-          <p className="text-muted mb-0">
-            No dashboard modules have been assigned to your account.
-            Please contact your Super Admin.
+          <p className="text-sm text-[#8791a5]">
+            No dashboard modules have been assigned to your account. Please
+            contact your Super Admin.
           </p>
         </div>
       )}

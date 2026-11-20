@@ -64,6 +64,11 @@
 .dashboard-navhide-section {
   background: white;
   color: black;
+  overflow-x: hidden;
+}
+
+.dashboard-navhide-section .dashboard-sidenav-section{
+  overflow-x: hidden;
 }
 
 /* ============ desktop view ============ */
@@ -742,11 +747,11 @@ label {
   margin-bottom: 5px;
 }
 
-.btn-sm {
+/* .btn-sm {
   position: absolute;
   top: 5px;
   right: 5px;
-}
+} */
 
 .custom-influ-close {
   border: 0px;
@@ -837,3 +842,4 @@ label {
   max-width: 200px;
   cursor: pointer;
 }
+
