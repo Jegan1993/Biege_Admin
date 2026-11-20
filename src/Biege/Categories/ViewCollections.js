@@ -374,7 +374,7 @@ function ViewCollections() {
   const columns = useMemo(
     () => [
       {
-        name: "#",
+        name: "S.No",
         cell: (row, index) => index + 1,
         width: "70px",
         center: true,

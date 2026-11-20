@@ -6,39 +6,41 @@ import { useNavigate } from "react-router-dom";
 import { makeApiRequest } from "../../AxiosServices/apiCall";
 import { toast } from "react-toastify";
 
-// Convert different API response formats into an array of module strings
+
+
+
 const normalizeModules = (response) => {
-  // Supports Axios response and already-unwrapped API response
-  const result = response?.data ?? response;
+  // Support both Axios response and directly returned API response
+  const result = response?.data?.status !== undefined
+    ? response.data
+    : response;
 
-  // Extract the API data
-  const moduleData = result?.data ?? result;
-
-  const items = Array.isArray(moduleData)
-    ? moduleData
-    : [moduleData];
-
-  const normalizedModules = items.flatMap((item) => {
-    // Example: "userList"
-    if (typeof item === "string") {
-      return [item];
-    }
-
-    // Example: { USER_LIST: "userList", PRODUCT_LIST: "productList" }
-    if (item && typeof item === "object" && !Array.isArray(item)) {
-      return Object.values(item).filter(
-        (value) => typeof value === "string"
-      );
-    }
-
+  if (result?.status !== true || !Array.isArray(result.data)) {
+    console.error("Invalid modules response:", response);
     return [];
-  });
+  }
 
-  // Remove empty values and duplicates
-  return [...new Set(
-    normalizedModules.filter((module) => module.trim() !== "")
-  )];
+  return [
+    ...new Set(
+      result.data.flatMap((item) => {
+        if (typeof item === "string") {
+          return [item];
+        }
+
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          return Object.values(item).filter(
+            (value) => typeof value === "string" && value.trim()
+          );
+        }
+
+        return [];
+      })
+    ),
+  ];
 };
+
+
+
 
 const validationSchema = Yup.object({
   name: Yup.string()
@@ -81,6 +83,85 @@ function AddSubadmin() {
   const [modules, setModules] = useState([]);
   const [modulesLoading, setModulesLoading] = useState(false);
 
+  // Fetch modules from backend
+  useEffect(() => {
+    const fetchModules = async () => {
+      setModulesLoading(true);
+
+      try {
+        const response = await makeApiRequest({
+          url: "/get-modules",
+          method: "GET",
+        });
+
+        console.log("GET MODULES API RESPONSE:", response);
+
+        // Handle Axios response or directly returned API response
+        const result =
+          response?.data?.status !== undefined
+            ? response.data
+            : response;
+
+        if (result?.status !== true) {
+          throw new Error(
+            result?.message || "Unable to fetch modules."
+          );
+        }
+
+        if (!Array.isArray(result.data)) {
+          throw new Error("Backend module data is not an array.");
+        }
+
+        // Extract module names dynamically from backend
+        const moduleData = [
+          ...new Set(
+            result.data.flatMap((item) => {
+              if (typeof item === "string") {
+                return [item];
+              }
+
+              if (
+                item &&
+                typeof item === "object" &&
+                !Array.isArray(item)
+              ) {
+                return Object.values(item).filter(
+                  (value) =>
+                    typeof value === "string" &&
+                    value.trim() !== ""
+                );
+              }
+
+              return [];
+            })
+          ),
+        ];
+
+        console.log("NORMALIZED MODULES:", moduleData);
+
+        if (moduleData.length === 0) {
+          throw new Error("No modules found in backend response.");
+        }
+
+        setModules(moduleData);
+      } catch (error) {
+        console.error("Fetch Modules Error:", error);
+
+        setModules([]);
+
+        toast.error(
+          error.response?.data?.message ||
+          error.message ||
+          "Unable to fetch modules."
+        );
+      } finally {
+        setModulesLoading(false);
+      }
+    };
+
+    fetchModules();
+  }, []);
+  // Formik
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -95,29 +176,33 @@ function AddSubadmin() {
       setLoading(true);
 
       try {
+        const permissions = values.permissions
+          .filter(
+            (permission) => permission.view || permission.edit
+          )
+          .map((permission) => ({
+            module: permission.module,
+            view: permission.view || permission.edit,
+            edit: permission.edit,
+          }));
+
         const response = await makeApiRequest({
           url: "/create-admin",
           method: "POST",
           data: {
-            ...values,
             name: values.name.trim(),
             email: values.email.trim().toLowerCase(),
-            permissions: values.permissions
-              .filter(
-                (permission) =>
-                  permission.view || permission.edit
-              )
-              .map((permission) => ({
-                module: permission.module,
-                view: permission.view || permission.edit,
-                edit: permission.edit,
-              })),
+            status: values.status,
+            permissions,
           },
         });
 
         const result = response?.data ?? response;
 
-        if (result?.status === false) {
+        if (
+          result?.success === false ||
+          result?.status === false
+        ) {
           throw new Error(
             result.message || "Unable to create sub-admin."
           );
@@ -142,47 +227,7 @@ function AddSubadmin() {
     },
   });
 
-  // Fetch backend modules
-  useEffect(() => {
-    const fetchModules = async () => {
-      setModulesLoading(true);
-
-      try {
-        const response = await makeApiRequest({
-          url: "/get-modules",
-          method: "GET",
-        });
-
-        console.log("GET MODULES API RESPONSE:", response);
-
-        const moduleData = normalizeModules(response);
-
-        console.log("NORMALIZED MODULES:", moduleData);
-
-        if (moduleData.length === 0) {
-          throw new Error("No valid modules received from backend.");
-        }
-
-        setModules(moduleData);
-      } catch (error) {
-        console.error("Fetch Modules Error:", error);
-
-        setModules([]);
-
-        toast.error(
-          error.response?.data?.message ||
-          error.message ||
-          "Unable to fetch modules."
-        );
-      } finally {
-        setModulesLoading(false);
-      }
-    };
-
-    fetchModules();
-  }, []);
-
-  // Handle module permission changes
+  // Handle permission changes
   const handlePermissionChange = (module, type, checked) => {
     const permissions = [...formik.values.permissions];
 
@@ -193,27 +238,31 @@ function AddSubadmin() {
     if (existingIndex === -1) {
       permissions.push({
         module,
-        view:
-          type === "view"
-            ? checked
-            : type === "edit" && checked,
+        view: type === "view" ? checked : checked,
         edit: type === "edit" ? checked : false,
       });
+
+      // Edit automatically includes View
+      if (type === "edit" && checked) {
+        permissions[permissions.length - 1].view = true;
+      }
     } else {
-      permissions[existingIndex] = {
+      const updatedPermission = {
         ...permissions[existingIndex],
         [type]: checked,
       };
 
       // Edit selected -> View automatically selected
       if (type === "edit" && checked) {
-        permissions[existingIndex].view = true;
+        updatedPermission.view = true;
       }
 
       // View unselected -> Edit automatically unselected
       if (type === "view" && !checked) {
-        permissions[existingIndex].edit = false;
+        updatedPermission.edit = false;
       }
+
+      permissions[existingIndex] = updatedPermission;
     }
 
     formik.setFieldValue("permissions", permissions);
@@ -222,7 +271,6 @@ function AddSubadmin() {
 
   return (
     <div className="container-fluid subadmin-page py-4">
-
       {/* Header */}
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
@@ -245,7 +293,6 @@ function AddSubadmin() {
       </div>
 
       <div className="card subadmin-card border-0 shadow-sm">
-
         <div className="card-header bg-white px-4 py-3">
           <h5 className="mb-0">
             Sub-admin information
@@ -253,11 +300,8 @@ function AddSubadmin() {
         </div>
 
         <div className="card-body p-4">
-
           <form onSubmit={formik.handleSubmit} noValidate>
-
             <div className="row g-4">
-
               {/* Name */}
               <div className="col-md-6">
                 <label htmlFor="name" className="form-label">
@@ -342,7 +386,6 @@ function AddSubadmin() {
 
               {/* Module Permissions */}
               <div className="col-12">
-
                 <h5 className="mb-1">
                   Module Permissions
                 </h5>
@@ -352,9 +395,7 @@ function AddSubadmin() {
                 </p>
 
                 <div className="table-responsive">
-
                   <table className="table table-bordered align-middle mb-0">
-
                     <thead className="table-light">
                       <tr>
                         <th>Module</th>
@@ -364,7 +405,6 @@ function AddSubadmin() {
                     </thead>
 
                     <tbody>
-
                       {modulesLoading ? (
                         <tr>
                           <td colSpan="3" className="text-center py-3">
@@ -372,7 +412,6 @@ function AddSubadmin() {
                           </td>
                         </tr>
                       ) : modules.length > 0 ? (
-
                         modules.map((module) => {
                           const permission =
                             formik.values.permissions.find(
@@ -381,7 +420,6 @@ function AddSubadmin() {
 
                           return (
                             <tr key={module}>
-
                               <td>{module}</td>
 
                               <td className="text-center">
@@ -413,11 +451,9 @@ function AddSubadmin() {
                                   }
                                 />
                               </td>
-
                             </tr>
                           );
                         })
-
                       ) : (
                         <tr>
                           <td colSpan="3" className="text-center py-3">
@@ -425,10 +461,8 @@ function AddSubadmin() {
                           </td>
                         </tr>
                       )}
-
                     </tbody>
                   </table>
-
                 </div>
 
                 {formik.touched.permissions &&
@@ -437,12 +471,10 @@ function AddSubadmin() {
                       {formik.errors.permissions}
                     </div>
                   )}
-
               </div>
 
               {/* Buttons */}
               <div className="col-12 d-flex justify-content-end gap-2 pt-2">
-
                 <button
                   type="button"
                   className="btn btn-light border"
@@ -463,13 +495,9 @@ function AddSubadmin() {
                 >
                   {loading ? "Creating..." : "Create Sub Admin"}
                 </button>
-
               </div>
-
             </div>
-
           </form>
-
         </div>
       </div>
     </div>
