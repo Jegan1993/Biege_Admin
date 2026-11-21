@@ -8,7 +8,7 @@ import { makeApiRequest } from "../../AxiosServices/apiCall";
 
 const disabledCls = "disabled:cursor-not-allowed disabled:opacity-60";
 
-const btnPrimary = `rounded-md bg-[#e98d9d] px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#d97589] ${disabledCls}`;
+const btnPrimary = `rounded-md bg-[#5a432f] px-[18px] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#4e3016]`;
 
 const btnGhost = `rounded-md border border-[#e3c8cc] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#8c3d4e] transition hover:border-[#e98d9d] hover:bg-[#faf2f3] ${disabledCls}`;
 
@@ -575,10 +575,10 @@ function ViewCollections() {
       {/* HEADER */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#000]">
             Collections
           </h3>
-          <p className="text-sm text-[#8791a5]">
+          <p className="text-sm text-[#000]">
             Manage manual product collections
           </p>
         </div>

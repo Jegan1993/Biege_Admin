@@ -214,22 +214,22 @@ function Dashboard() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#000]">
             Dashboard
           </h3>
-          <p className="text-sm text-[#8791a5]">
+          <p className="text-sm text-[#000]">
             Welcome back! Here's your business overview.
           </p>
         </div>
 
-        <div className="rounded-lg bg-[#e9edff] px-4 py-2.5 text-[13px] font-semibold text-[#e98d9d]">
+        <div className="rounded-lg bg-[#6f533b] px-4 py-2.5 text-[13px] font-semibold text-[#fff]">
           <i className="fa fa-user-shield mr-2"></i>
           {role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
         </div>
       </div>
 
       {/* Welcome Banner */}
-      <div className="mb-8 flex items-center justify-between rounded-[15px] bg-[linear-gradient(110deg,#e98d9d,#e3c8cc)] px-[35px] py-[30px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
+      <div className="mb-8 flex items-center justify-between rounded-[15px] bg-[#6f533b] px-[35px] py-[30px] text-white shadow-[0_4px_20px_rgba(0,0,0,0.1)]">
         <div>
           <span className="text-[11px] font-bold tracking-[2px] opacity-75">
             BEIGE ADMIN PANEL

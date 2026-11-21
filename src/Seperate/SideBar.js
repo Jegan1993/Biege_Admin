@@ -312,7 +312,7 @@ function SideBar() {
         type="button"
         aria-label="Open menu"
         onClick={() => setMobileOpen(true)}
-        className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#e98a9b] text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] lg:hidden"
+        className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#6f533b] text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] lg:hidden"
       >
         <GrMenu className="[&_path]:stroke-white" />
       </button>
@@ -329,7 +329,7 @@ function SideBar() {
       {/* ================= SIDEBAR ================= */}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[200px] overflow-y-auto bg-[#e6c8cc] pb-6 transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-[200px] overflow-y-auto bg-[#f0e5d3] pb-6 transition-transform duration-200 lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -366,7 +366,7 @@ function SideBar() {
                     to={item.to}
                     className={`${linkBase} ${
                       item.active
-                        ? "bg-[#e98a9b] font-medium shadow-[0_4px_10px_rgba(233,138,155,0.3)]"
+                        ? "bg-[#6f533b] font-medium shadow-[0_4px_10px_rgba(233,138,155,0.3)] text-white"
                         : "hover:bg-white/40"
                     }`}
                   >

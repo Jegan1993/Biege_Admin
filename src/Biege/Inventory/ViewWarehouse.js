@@ -24,10 +24,10 @@ const theme = {
 
 /* Reusable Tailwind class strings */
 const inputCls =
-  "w-full rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 py-2.5 text-sm text-[#1f2a4a] outline-none transition placeholder:text-[#a9b2c7] focus:border-[#e98a9b] focus:bg-white focus:ring-4 focus:ring-[#e98a9b]/20";
+  "w-full rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 py-2.5 text-sm text-[#1f2a4a] outline-none transition placeholder:text-[#a9b2c7] focus:border-[#6f533b] focus:bg-white focus:ring-4 focus:ring-[#6f533b]/20";
 const labelCls = "mb-1.5 block text-[13px] font-semibold text-[#1f2a4a]";
 const btnPrimary =
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] bg-[#e98a9b] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] transition hover:bg-[#d9748a] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] bg-[#6f533b] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] transition hover:bg-[#d9748a] disabled:cursor-not-allowed disabled:opacity-60";
 const btnGhost =
   "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] border border-[#e9ebf3] bg-white px-5 py-2.5 text-sm font-semibold text-[#1f2a4a] transition hover:bg-[#f5f6fb]";
 
@@ -338,7 +338,7 @@ function ViewWarehouse() {
             <button
               type="button"
               onClick={() => handleSetDefault(row._id)}
-              className="cursor-pointer rounded-lg border border-[#e9ebf3] bg-white px-3 py-1.5 text-xs font-semibold text-[#8c2f3f] transition hover:border-[#e98a9b] hover:bg-[#fbeef0]"
+              className="cursor-pointer rounded-lg border border-[#e9ebf3] bg-white px-3 py-1.5 text-xs font-semibold text-[#8c2f3f] transition hover:border-[#6f533b] hover:bg-[#fbeef0]"
             >
               Set Default
             </button>
@@ -347,7 +347,7 @@ function ViewWarehouse() {
           <button
             type="button"
             onClick={() => handleEdit(row._id)}
-            className="cursor-pointer rounded-lg border border-[#e98a9b] bg-[#e98a9b] px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[#d9748a] hover:bg-[#d9748a]"
+            className="cursor-pointer rounded-lg border border-[#6f533b] bg-[#6f533b] px-3 py-1.5 text-xs font-semibold text-white transition hover:border-[#d9748a] hover:bg-[#d9748a]"
           >
             Edit
           </button>
@@ -413,7 +413,7 @@ function ViewWarehouse() {
       {/* PAGE HEADER */}
       <div className="mb-[22px] flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="mb-1 text-[28px] font-bold text-[#e98a9b]">
+          <h1 className="mb-1 text-[28px] font-bold text-[#6f533b]">
             Warehouse Management
           </h1>
           <p className="text-sm text-[#7f8ba5]">Manage your warehouse locations</p>
@@ -527,7 +527,7 @@ function ViewWarehouse() {
                     name="isDefault"
                     checked={formData.isDefault}
                     onChange={handleChange}
-                    className="h-[18px] w-[18px] accent-[#e98a9b]"
+                    className="h-[18px] w-[18px] accent-[#6f533b]"
                   />
                   <span className="text-[13px] font-semibold text-[#1f2a4a]">
                     Set as Default Warehouse
@@ -587,7 +587,7 @@ function ViewWarehouse() {
             persistTableHead
             noDataComponent={
               <div className="py-12 text-center">
-                <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fbeef0] text-2xl text-[#e98a9b]">
+                <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fbeef0] text-2xl text-[#6f533b]">
                   ▦
                 </div>
                 <h6 className="mb-1 font-bold text-[#1f2a4a]">

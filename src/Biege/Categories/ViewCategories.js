@@ -73,22 +73,22 @@ const getParentId = (category) =>
 // ================= TAILWIND CLASS HELPERS =================
 
 const btnPrimary =
-  "rounded-md bg-[#e98d9d] px-[18px] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#d97589]";
+  "rounded-md bg-[#5a432f] px-[18px] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#4e3016]";
 
 const btnGhost =
-  "rounded-md border border-[#e3c8cc] bg-white px-[18px] py-2.5 text-[13px] font-semibold text-[#8c3d4e] transition hover:border-[#e98d9d] hover:bg-[#faf2f3]";
+  "rounded-md border border-[#e3c8cc] bg-white px-[18px] py-2.5 text-[13px] font-semibold text-[#6f533b] transition hover:border-[#e98d9d] hover:bg-[#faf2f3]";
 
 const btnDanger =
   "mr-auto rounded-md border border-red-200 bg-red-50 px-[18px] py-2.5 text-[13px] font-semibold text-red-700 transition hover:bg-red-600 hover:text-white";
 
 const rowBtn =
-  "whitespace-nowrap rounded-md border border-[#e3c8cc] bg-white px-3 py-[7px] text-xs font-semibold text-[#8c3d4e] transition hover:bg-[#e3c8cc]";
+  "whitespace-nowrap rounded-md border border-[#e3c8cc] bg-white px-3 py-[7px] text-xs font-semibold text-[#6f533b] transition hover:bg-[#e3c8cc]";
 
 const rowBtnEdit =
-  "whitespace-nowrap rounded-md border border-[#e98d9d] bg-[#e98d9d] px-3 py-[7px] text-xs font-semibold text-white transition hover:bg-[#d97589]";
+  "whitespace-nowrap rounded-md border border-[#e98d9d] bg-[#6f533b] px-3 py-[7px] text-xs font-semibold text-white transition hover:bg-[#4e3016]";
 
 const fieldCore =
-  "w-full rounded-md border px-3 py-2.5 text-[13px] text-[#26334a] outline-none transition focus:ring-4";
+  "w-full rounded-md border px-3 py-2.5 text-[13px] text-[#26334a] outline-none transition ";
 
 const fieldOk =
   "border-[#e3c8cc] bg-white focus:border-[#e98d9d] focus:ring-[#e98d9d]/30";
@@ -97,7 +97,7 @@ const fieldBad =
   "border-red-600 bg-red-50 focus:border-red-600 focus:ring-red-200";
 
 const thClass =
-  "whitespace-nowrap px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-[#8c3d4e]";
+  "whitespace-nowrap px-4 py-3.5 text-left text-[11px] font-bold uppercase tracking-widest text-[#6f533b]";
 
 const tdClass = "border-b border-[#edf0f5] px-4 py-3.5 align-middle text-[13px]";
 
@@ -477,16 +477,16 @@ function ViewCategories() {
       {/* HEADER */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#000]">
             Categories
           </h3>
-          <p className="text-sm text-[#8791a5]">
+          <p className="text-sm text-[#000]">
             Manage parent and child categories for your storefront menu and
             filters.
           </p>
         </div>
 
-        <button type="button" className={btnPrimary} onClick={handleAddCategory}>
+        <button type="button" className={"inline-flex cursor-pointer items-center justify-center gap-2 rounded-[4px] border-0 bg-[#6f533b] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5a432f] focus:outline-none  focus:ring-[#6f533b]/25"} onClick={handleAddCategory}>
           + Create Category
         </button>
       </div>
@@ -522,13 +522,13 @@ function ViewCategories() {
           placeholder="Search by name or slug..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="min-w-[220px] max-w-full flex-1 rounded-md border border-[#e3c8cc] bg-white px-3.5 py-2.5 text-[13px] text-[#26334a] outline-none focus:border-[#e98d9d] focus:ring-4 focus:ring-[#e98d9d]/30 sm:max-w-[360px]"
+          className="min-w-[220px] max-w-full flex-1 rounded-md border border-[#e3c8cc] bg-white px-3.5 py-2.5 text-[13px] text-[#26334a] outline-none focus:border-[#e98d9d]  focus:ring-[#e98d9d]/30 sm:max-w-[360px]"
         />
 
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-md border border-[#e3c8cc] bg-white px-3 py-2.5 text-[13px] text-[#26334a] outline-none focus:border-[#e98d9d] focus:ring-4 focus:ring-[#e98d9d]/30"
+          className="rounded-md border border-[#e3c8cc] bg-white px-3 py-2.5 text-[13px] text-[#26334a] outline-none focus:border-[#e98d9d]  focus:ring-[#e98d9d]/30"
         >
           <option value="ALL">All status</option>
           <option value="ACTIVE">Active</option>
@@ -570,7 +570,7 @@ function ViewCategories() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] border-collapse">
-              <thead className="bg-[#e3c8cc]">
+              <thead className="bg-[#f0e5d3]">
                 <tr>
                   <th className={thClass}>Category</th>
                   <th className={thClass}>Slug</th>
@@ -592,7 +592,7 @@ function ViewCategories() {
                   return (
                     <tr
                       key={category._id}
-                      className="transition-colors hover:bg-[#faf2f3]"
+                      className="transition-colors hover:bg-[#fff9ef]"
                     >
                       <td className={tdClass}>
                         <div
@@ -604,7 +604,7 @@ function ViewCategories() {
                               type="button"
                               onClick={() => toggleCollapse(category._id)}
                               aria-label={isCollapsed ? "Expand" : "Collapse"}
-                              className={`h-6 w-6 shrink-0 rounded-[5px] border border-[#e3c8cc] bg-white text-[11px] leading-none text-[#8c3d4e] transition hover:bg-[#e3c8cc] ${
+                              className={`h-6 w-6 shrink-0 rounded-[5px] border border-[#e3c8cc] bg-white text-[11px] leading-none text-[#4e3016] transition hover:bg-[#e3c8cc] ${
                                 isCollapsed ? "-rotate-90" : ""
                               }`}
                             >
@@ -649,7 +649,7 @@ function ViewCategories() {
                       </td>
 
                       <td className={tdClass}>
-                        <span className="rounded border border-[#e3c8cc] bg-[#faf2f3] px-2 py-0.5 font-mono text-xs text-[#8c3d4e]">
+                        <span className="rounded border border-[#e3c8cc] bg-[#f0e5d3] px-2 py-0.5 font-mono text-xs text-[#6f533b]">
                           {category.slug || "-"}
                         </span>
                       </td>
@@ -658,8 +658,8 @@ function ViewCategories() {
                         <span
                           className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                             parentName
-                              ? "bg-[#e3c8cc] text-[#8c3d4e]"
-                              : "bg-[#e98d9d] text-white"
+                              ? "bg-[#f0e5d3] text-[#6f533b]"
+                              : "bg-[#6f533b] text-[#fff]"
                           }`}
                         >
                           {parentName || "Main"}
@@ -719,12 +719,12 @@ function ViewCategories() {
           }}
         >
           <div className="w-full max-w-[720px] overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#e3c8cc] bg-[#e3c8cc] px-6 py-5">
+            <div className="flex items-center justify-between border-b border-[#e3c8cc] bg-[#5a432f] px-6 py-5">
               <div>
-                <h3 className="text-2xl font-bold text-[#26334a]">
+                <h3 className="text-2xl font-bold text-[#fff]">
                   {editId ? "Edit category" : "Create category"}
                 </h3>
-                <p className="mt-0.5 text-xs text-[#8c3d4e]">
+                <p className="mt-0.5 text-xs text-[#fff]">
                   Fields marked with * are required
                 </p>
               </div>
@@ -733,7 +733,7 @@ function ViewCategories() {
                 type="button"
                 onClick={resetForm}
                 aria-label="Close"
-                className="h-[34px] w-[34px] rounded-full border border-[#e3c8cc] bg-white text-sm text-[#8c3d4e] transition hover:bg-[#e98d9d] hover:text-white"
+                className="h-[34px] w-[34px] rounded-full border border-[#e3c8cc] bg-white text-sm text-[#4e3016] transition hover:bg-[#fff9ef] hover:text-black"
               >
                 ✕
               </button>
@@ -743,7 +743,7 @@ function ViewCategories() {
               <div className="grid grid-cols-1 gap-x-5 gap-y-[18px] sm:grid-cols-2">
                 {/* NAME */}
                 <div className="flex min-w-0 flex-col gap-[7px]">
-                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                  <label className="text-xs font-semibold text-[#4e3016]">
                     Category name <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -763,7 +763,7 @@ function ViewCategories() {
 
                 {/* SLUG */}
                 <div className="flex min-w-0 flex-col gap-[7px]">
-                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                  <label className="text-xs font-semibold text-[#4e3016]">
                     Slug <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -787,7 +787,7 @@ function ViewCategories() {
 
                 {/* PARENT */}
                 <div className="flex min-w-0 flex-col gap-[7px]">
-                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                  <label className="text-xs font-semibold text-[#4e3016]">
                     Parent category
                   </label>
                   <select
@@ -815,7 +815,7 @@ function ViewCategories() {
 
                 {/* DISPLAY ORDER */}
                 <div className="flex min-w-0 flex-col gap-[7px]">
-                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                  <label className="text-xs font-semibold text-[#4e3016]">
                     Display order <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -834,7 +834,7 @@ function ViewCategories() {
 
                 {/* STATUS */}
                 <div className="flex min-w-0 flex-col gap-[7px]">
-                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                  <label className="text-xs font-semibold text-[#4e3016]">
                     Status <span className="text-red-600">*</span>
                   </label>
                   <select
@@ -855,14 +855,14 @@ function ViewCategories() {
 
                 {/* IMAGE */}
                 <div className="flex min-w-0 flex-col gap-[7px]">
-                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                  <label className="text-xs font-semibold text-[#4e3016]">
                     Category image
                   </label>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handleImageChange}
-                    className="w-full rounded-md border border-dashed border-[#e98d9d] bg-[#faf2f3] p-2.5 text-xs file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-[#e98d9d] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
+                    className="w-full rounded-md border border-dashed border-[#e98d9d] bg-[#fff9ef] p-2.5 text-xs file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-[#4e3016] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
                   />
                   {errors.image && (
                     <span className="text-xs font-medium text-red-600">
@@ -880,7 +880,7 @@ function ViewCategories() {
 
                 {/* DESCRIPTION */}
                 <div className="flex min-w-0 flex-col gap-[7px] sm:col-span-2">
-                  <label className="text-xs font-semibold text-[#8c3d4e]">
+                  <label className="text-xs font-semibold text-[#4e3016]">
                     Description
                   </label>
                   <textarea
@@ -900,7 +900,7 @@ function ViewCategories() {
               </div>
 
               {/* ACTIONS */}
-              <div className="-mx-6 mt-6 flex flex-wrap items-center justify-end gap-2.5 border-t border-[#edf0f5] bg-[#faf2f3] px-6 py-4">
+              <div className="-mx-6 mt-6 flex flex-wrap items-center justify-end gap-2.5 border-t border-[#edf0f5] bg-[#fff9ef] px-6 py-4">
                 {editId && (
                   <button
                     type="button"

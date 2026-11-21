@@ -34,12 +34,12 @@ const theme = {
 
 /* Reusable Tailwind class strings */
 const inputCls =
-  "w-full rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 py-2.5 text-sm text-[#1f2a4a] outline-none transition placeholder:text-[#a9b2c7] focus:border-[#e98a9b] focus:bg-white focus:ring-4 focus:ring-[#e98a9b]/20 disabled:cursor-not-allowed disabled:bg-[#eef0f6] disabled:text-[#7f8ba5]";
+  "w-full rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 py-2.5 text-sm text-[#1f2a4a] outline-none transition placeholder:text-[#a9b2c7] focus:border-[#6f533b] focus:bg-white focus:ring-4 focus:ring-[#6f533b]/20 disabled:cursor-not-allowed disabled:bg-[#eef0f6] disabled:text-[#7f8ba5]";
 const labelCls = "mb-1.5 block text-[13px] font-semibold text-[#1f2a4a]";
 const btnBase =
   "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[10px] px-[18px] py-[9px] text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60";
-const btnPrimary = `${btnBase} bg-[#e98a9b] text-white shadow-[0_6px_14px_rgba(233,138,155,0.3)] hover:bg-[#d9748a]`;
-const btnOutline = `${btnBase} border border-[#e9ebf3] bg-white text-[#8c2f3f] hover:border-[#e98a9b] hover:bg-[#fbeef0]`;
+const btnPrimary = `${btnBase} bg-[#6f533b] text-white shadow-[0_6px_14px_rgba(233,138,155,0.3)] hover:bg-[#d9748a]`;
+const btnOutline = `${btnBase} border border-[#e9ebf3] bg-white text-[#8c2f3f] hover:border-[#6f533b] hover:bg-[#fbeef0]`;
 const btnSoft = `${btnBase} border border-[#e8cdd1] bg-[#e8cdd1] text-[#8c2f3f] hover:bg-[#dfbcc2]`;
 const actBase =
   "inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition";
@@ -649,7 +649,7 @@ function ViewInventory() {
                 alt={row.productId.name || "Product"}
               />
             ) : (
-              <div className="flex h-[42px] w-[42px] items-center justify-center rounded-[10px] bg-[#fbeef0] text-[#e98a9b]">
+              <div className="flex h-[42px] w-[42px] items-center justify-center rounded-[10px] bg-[#fbeef0] text-[#6f533b]">
                 <i className="fa fa-image"></i>
               </div>
             )}
@@ -741,7 +741,7 @@ function ViewInventory() {
             <button
               type="button"
               onClick={() => handleViewDetails(row._id)}
-              className={`${actBase} border border-[#e9ebf3] bg-white text-[#8c2f3f] hover:border-[#e98a9b] hover:bg-[#fbeef0]`}
+              className={`${actBase} border border-[#e9ebf3] bg-white text-[#8c2f3f] hover:border-[#6f533b] hover:bg-[#fbeef0]`}
             >
               <i className="fa fa-eye"></i>
               View
@@ -750,7 +750,7 @@ function ViewInventory() {
             <button
               type="button"
               onClick={() => openAdjustmentModal(row)}
-              className={`${actBase} border border-[#e98a9b] bg-white text-[#d9748a] hover:bg-[#e98a9b] hover:text-white`}
+              className={`${actBase} border border-[#6f533b] bg-white text-[#d9748a] hover:bg-[#6f533b] hover:text-white`}
             >
               <i className="fa fa-edit"></i>
               Adjust
@@ -789,7 +789,7 @@ function ViewInventory() {
       {/* HEADER */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3.5">
         <div>
-          <h1 className="mb-1 text-[28px] font-bold text-[#e98a9b]">
+          <h1 className="mb-1 text-[28px] font-bold text-[#6f533b]">
             Inventory Management
           </h1>
           <p className="text-sm text-[#7f8ba5]">

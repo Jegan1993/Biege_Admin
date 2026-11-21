@@ -17,17 +17,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const disabledCls = "disabled:cursor-not-allowed disabled:opacity-50";
 
-// header buttons
-const btnPrimary = `rounded-md bg-[#e98d9d] px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#d97589] ${disabledCls}`;
-const btnGhost = `rounded-md border border-[#e3c8cc] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#8c3d4e] transition hover:border-[#e98d9d] hover:bg-[#faf2f3] ${disabledCls}`;
+const btnPrimary = `rounded-md bg-[#e98d9d] px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#d97589] hover:!text-white hover:!opacity-100 ${disabledCls}`;
+const btnGhost = `rounded-md border border-[#e3c8cc] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#000] transition hover:border-[#e98d9d] hover:bg-[#f9f6f1] hover:!text-[#000] hover:!opacity-100 ${disabledCls}`;
 
-// bulk action buttons (small)
-const btnActivate = `rounded-md bg-[#23965e] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#1d7d4e] ${disabledCls}`;
-const btnArchive = `rounded-md bg-[#73788b] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#5f6475] ${disabledCls}`;
-const btnChangeCat = `rounded-md border border-[#e98d9d] bg-white px-3.5 py-2 text-xs font-semibold text-[#c25b70] transition hover:bg-[#e98d9d] hover:text-white ${disabledCls}`;
-const btnExportSel = `rounded-md border border-[#23965e] bg-white px-3.5 py-2 text-xs font-semibold text-[#23965e] transition hover:bg-[#23965e] hover:text-white ${disabledCls}`;
-const btnExportAll = `rounded-md border border-[#3d4654] bg-white px-3.5 py-2 text-xs font-semibold text-[#3d4654] transition hover:bg-[#3d4654] hover:text-white ${disabledCls}`;
-
+const btnActivate = `rounded-md bg-[#23965e] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#1d7d4e] hover:!text-white hover:!opacity-100 ${disabledCls}`;
+const btnArchive = `rounded-md bg-[#73788b] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#5f6475] hover:!text-white hover:!opacity-100 ${disabledCls}`;
+const btnChangeCat = `rounded-md border border-[#e98d9d] bg-white px-3.5 py-2 text-xs font-semibold text-[#c25b70] transition hover:bg-[#e98d9d] hover:!text-black hover:!opacity-100 ${disabledCls}`;
+const btnExportSel = `rounded-md border border-[#23965e] bg-white px-3.5 py-2 text-xs font-semibold text-[#23965e] transition hover:bg-[#23965e] hover:!text-black hover:!opacity-100 ${disabledCls}`;
+const btnExportAll = `rounded-md border border-[#3d4654] bg-white px-3.5 py-2 text-xs font-semibold text-[#3d4654] transition hover:bg-[#3d4654] hover:!text-black hover:!opacity-100 ${disabledCls}`;
 // inputs
 const fieldClass =
   "rounded-md border border-[#e3c8cc] bg-white px-3 py-2 text-[13px] text-[#26334a] outline-none transition focus:border-[#e98d9d] focus:ring-4 focus:ring-[#e98d9d]/30 disabled:cursor-not-allowed disabled:opacity-60";
@@ -637,7 +634,7 @@ function ViewProduct() {
         sortable: true,
         minWidth: "120px",
         cell: (row) => (
-          <span className="rounded border border-[#e3c8cc] bg-[#faf2f3] px-2 py-0.5 font-mono text-xs text-[#8c3d4e]">
+          <span className="rounded border border-[#e3c8cc] bg-[#f9f6f1] px-2 py-0.5 font-mono text-xs text-[#000]">
             {row.sku}
           </span>
         ),
@@ -736,7 +733,7 @@ function ViewProduct() {
   const customStyles = {
     headRow: {
       style: {
-        backgroundColor: "#e3c8cc",
+        backgroundColor: "rgb(240 229 211)",
         minHeight: "52px",
         borderBottom: "none",
         borderTopLeftRadius: "10px",
@@ -748,7 +745,7 @@ function ViewProduct() {
         fontSize: "11px",
         fontWeight: "700",
         letterSpacing: "0.08em",
-        color: "#8c3d4e",
+        color: "#000",
         paddingLeft: "16px",
         paddingRight: "16px",
       },
@@ -765,7 +762,7 @@ function ViewProduct() {
         color: "#26334a",
       },
       highlightOnHoverStyle: {
-        backgroundColor: "#faf2f3",
+        backgroundColor: "#f9f6f1",
         color: "#26334a",
         borderBottomColor: "#edf0f5",
         outline: "none",
@@ -795,10 +792,10 @@ function ViewProduct() {
       {/* PAGE HEADER */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="mb-1.5 text-[28px] font-bold text-[#e9899d]">
+          <h3 className="mb-1.5 text-[28px] font-bold text-[#000]">
             Products
           </h3>
-          <p className="text-sm text-[#8791a5]">
+          <p className="text-sm text-[#000]">
             Manage your skincare and beauty products
           </p>
         </div>
@@ -836,14 +833,14 @@ function ViewProduct() {
             onChange={handleImportFile}
           />
 
-          <button
-            type="button"
-            className={btnPrimary}
-            onClick={() => navigate("/create-product")}
-          >
-            <i className="fa-solid fa-plus mr-2"></i>
-            Add Product
-          </button>
+         <button
+  type="button"
+  onClick={() => navigate("/create-product")}
+  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[4px] border-0 bg-[#6f533b] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5a432f] focus:outline-none focus:ring-4 focus:ring-[#6f533b]/25"
+>
+  <i className="fa-solid fa-plus"></i>
+  Add Product
+</button>
         </div>
       </div>
 
@@ -906,7 +903,7 @@ function ViewProduct() {
         </div>
 
         {/* BULK ACTIONS */}
-        <div className="mb-4 flex flex-wrap items-center gap-2.5 rounded-[10px] border border-[#f1dfe2] bg-[#faf2f3] p-3.5">
+        <div className="mb-4 flex flex-wrap items-center gap-2.5 rounded-[10px] border border-[#f1dfe2] bg-[#6f533b] p-3.5">
           <span className="mr-1 rounded-full bg-[#e98d9d] px-3 py-1 text-xs font-bold text-white">
             {selectedRows.length} Selected
           </span>
@@ -1052,7 +1049,7 @@ function ViewProduct() {
                 type="button"
                 aria-label="Close"
                 onClick={() => setShowImageModal(false)}
-                className="h-8 w-8 rounded-full bg-white text-sm text-[#8c3d4e] transition hover:bg-[#e98d9d] hover:text-white"
+                className="h-8 w-8 rounded-full bg-white text-sm text-[#000] transition hover:bg-[#e98d9d] hover:text-white"
               >
                 ✕
               </button>
@@ -1083,7 +1080,7 @@ function ViewProduct() {
                 aria-label="Close"
                 disabled={importLoading}
                 onClick={() => setShowImportModal(false)}
-                className="h-8 w-8 rounded-full bg-white text-sm text-[#8c3d4e] transition hover:bg-[#e98d9d] hover:text-white disabled:opacity-50"
+                className="h-8 w-8 rounded-full bg-white text-sm text-[#000] transition hover:bg-[#e98d9d] hover:text-white disabled:opacity-50"
               >
                 ✕
               </button>
@@ -1131,7 +1128,7 @@ function ViewProduct() {
 
                   <div className="overflow-x-auto rounded-[10px] border border-[#edf0f5]">
                     <table className="w-full min-w-[560px] border-collapse text-[13px]">
-                      <thead className="bg-[#faf2f3]">
+                      <thead className="bg-[#f9f6f1]">
                         <tr>
                           {[
                             "Name",
@@ -1144,7 +1141,7 @@ function ViewProduct() {
                           ].map((heading) => (
                             <th
                               key={heading}
-                              className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#8c3d4e]"
+                              className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#000]"
                             >
                               {heading}
                             </th>
@@ -1227,7 +1224,7 @@ function ViewProduct() {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-[#edf0f5] bg-[#faf2f3] px-6 py-4">
+            <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-[#edf0f5] bg-[#f9f6f1] px-6 py-4">
               <button
                 type="button"
                 className={btnGhost}

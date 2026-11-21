@@ -188,7 +188,7 @@ function ViewSubAdmin() {
               title="Edit Sub Admin"
               aria-label={`Edit ${row.name || "sub-admin"}`}
               onClick={() => handleEdit(row)}
-              className="inline-flex h-[38px] w-[38px] min-w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-[#e98a9b] bg-[#fbeef0] p-0 text-[#d9748a] transition hover:bg-[#e98a9b] hover:text-white"
+              className="inline-flex h-[38px] w-[38px] min-w-[38px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-[#6f533b] bg-[#fbeef0] p-0 text-[#d9748a] transition hover:bg-[#6f533b] hover:text-white"
             >
               <FontAwesomeIcon icon={faPenToSquare} />
             </button>
@@ -281,7 +281,7 @@ function ViewSubAdmin() {
       {/* PAGE HEADER */}
       <div className="mb-[26px] flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="mb-1.5 text-[28px] font-bold text-[#e98a9b]">
+          <h2 className="mb-1.5 text-[28px] font-bold text-[#6f533b]">
             Sub Admins
           </h2>
           <p className="text-sm text-[#7f8ba5]">
@@ -292,7 +292,7 @@ function ViewSubAdmin() {
         <button
           type="button"
           onClick={() => navigate("/add-subadmin")}
-          className="inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-[10px] bg-[#e98a9b] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] transition hover:bg-[#d9748a]"
+          className="inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-[10px] bg-[#6f533b] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgba(233,138,155,0.35)] transition hover:bg-[#d9748a]"
         >
           <FontAwesomeIcon icon={faPlus} />
           Add Sub Admin
@@ -303,7 +303,7 @@ function ViewSubAdmin() {
       <div className="w-full overflow-hidden rounded-2xl border border-[#e9ebf3] bg-white shadow-[0_4px_18px_rgba(31,42,74,0.04)]">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e9ebf3] px-6 py-[22px]">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fbeef0] text-lg text-[#e98a9b]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fbeef0] text-lg text-[#6f533b]">
               <FontAwesomeIcon icon={faUsers} />
             </div>
 
@@ -325,10 +325,10 @@ function ViewSubAdmin() {
 
         {/* SEARCH + REFRESH */}
         <div className="flex flex-wrap items-center justify-between gap-3.5 px-6 py-5">
-          <div className="flex w-full max-w-[380px] items-center gap-2.5 rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 focus-within:border-[#e98a9b] focus-within:ring-4 focus-within:ring-[#e98a9b]/20">
+          <div className="flex w-full max-w-[380px] items-center gap-2.5 rounded-[10px] border border-[#e9ebf3] bg-[#f5f6fb] px-3.5 focus-within:border-[#6f533b] focus-within:ring-4 focus-within:ring-[#6f533b]/20">
             <FontAwesomeIcon
               icon={faMagnifyingGlass}
-              className="text-[13px] text-[#e98a9b]"
+              className="text-[13px] text-[#6f533b]"
             />
 
             <input
@@ -373,7 +373,7 @@ function ViewSubAdmin() {
             progressComponent={
               <div className="px-5 py-[45px] text-center">
                 <div
-                  className="spinner-border text-[#e98a9b]"
+                  className="spinner-border text-[#6f533b]"
                   role="status"
                 />
                 <p className="mb-0 mt-3.5 text-[13px] text-[#7f8ba5]">
